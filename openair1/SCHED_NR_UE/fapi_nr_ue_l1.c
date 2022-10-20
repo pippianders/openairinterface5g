@@ -554,4 +554,10 @@ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
   return 0;
 }
 
+void nr_ue_synch_request(nr_synch_request_t *synch_request)
+{
+  fapi_nr_synch_request_t *synch_req = &PHY_vars_UE_g[synch_request->Mod_id][synch_request->CC_id]->synch_request.synch_req;
+  memcpy(synch_req, &synch_request->synch_req, sizeof(fapi_nr_synch_request_t));
+  PHY_vars_UE_g[synch_request->Mod_id][synch_request->CC_id]->synch_request.received_synch_request = 1;
+}
 
