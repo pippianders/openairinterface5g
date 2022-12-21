@@ -1007,7 +1007,7 @@ target_link_libraries(ldpc PRIVATE ldpc_gen_HEADERS)
 
 add_library(coding MODULE ${PHY_TURBOSRC} )
 
-add_library(dfts MODULE ${OPENAIR1_DIR}/PHY/TOOLS/oai_dfts.c )
+add_library(dfts MODULE ${OPENAIR1_DIR}/PHY/TOOLS/oai_dfts.c ${OPENAIR1_DIR}/PHY/TOOLS/oai_dfts_neon.c)
 
 
 set(PHY_SRC_COMMON
