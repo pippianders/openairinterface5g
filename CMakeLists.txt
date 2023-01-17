@@ -834,14 +834,16 @@ add_library(UTIL
   ${OPENAIR_DIR}/common/utils/LOG/log.c
   ${OPENAIR_DIR}/common/utils/LOG/vcd_signal_dumper.c
   ${OPENAIR2_DIR}/UTIL/MATH/oml.c
-  ${OPENAIR2_DIR}/UTIL/OPT/probe.c
   ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/time_meas.c
   ${OPENAIR_DIR}/common/utils/time_stat.c
 )
-target_link_libraries(UTIL PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(UTIL PUBLIC CONFIG_LIB pthread)
+
+add_library(OPT ${OPENAIR2_DIR}/UTIL/OPT/probe.c)
+target_link_libraries(OPT PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 set(SECU_OSA_SRC
   ${OPENAIR2_DIR}/UTIL/OSA/osa_key_deriver.c
@@ -2206,7 +2208,7 @@ target_link_libraries(lte-softmodem PRIVATE
   -Wl,--start-group
   lte_rrc nr_rrc s1ap m2ap x2ap m3ap GTPV1U f1ap SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB SCHED_RU_LIB
   PHY_COMMON PHY PHY_RU  L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
-  ${NAS_UE_LIB} ITTI SIMU
+  ${NAS_UE_LIB} ITTI SIMU OPT
   -Wl,--end-group z dl)
 
 target_link_libraries(lte-softmodem PRIVATE ${LIBXML2_LIBRARIES})
@@ -2271,7 +2273,7 @@ target_link_libraries(lte-uesoftmodem PRIVATE
   lte_rrc nr_rrc s1ap x2ap m2ap m3ap
   SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON
   PHY_UE PHY_RU L2_UE L2_LTE SIMU NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
-  ${NAS_UE_LIB} ITTI ${ATLAS_LIBRARIES}
+  ${NAS_UE_LIB} ITTI ${ATLAS_LIBRARIES} OPT
   -Wl,--end-group z dl)
 
 target_link_libraries(lte-uesoftmodem PRIVATE ${LIBXML2_LIBRARIES})
@@ -2313,7 +2315,7 @@ target_link_libraries(nr-softmodem PRIVATE
   UTIL HASHTABLE SCTP_CLIENT SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU GTPV1U SECU_CN SECU_OSA
   ITTI ${NAS_UE_LIB} lte_rrc nr_rrc
   ngap s1ap L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB SIMU
-  x2ap f1ap m2ap m3ap
+  x2ap f1ap m2ap m3ap OPT
   -Wl,--end-group z dl)
 
 target_link_libraries(nr-softmodem PRIVATE ${LIBXML2_LIBRARIES})
@@ -2358,7 +2360,7 @@ target_link_libraries(nr-uesoftmodem PRIVATE
   nr_rrc SECU_CN SECU_OSA UTIL HASHTABLE SCHED_RU_LIB SCHED_NR_UE_LIB
   PHY_COMMON PHY_NR_COMMON PHY_NR_UE NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
   NFAPI_USER_LIB MISC_NFAPI_NR_LIB
-  ITTI ${ATLAS_LIBRARIES} LIB_5GNAS_GNB LIB_NAS_SIMUE ${NAS_SIM_LIB} SIMU
+  ITTI ${ATLAS_LIBRARIES} LIB_5GNAS_GNB LIB_NAS_SIMUE ${NAS_SIM_LIB} SIMU OPT
   -Wl,--end-group z dl)
 
 target_link_libraries(nr-uesoftmodem PRIVATE ${LIBXML2_LIBRARIES})
@@ -2457,7 +2459,7 @@ add_executable(nr_dlschsim
   )
 target_link_libraries(nr_dlschsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ITTI dl
+  m pthread ${ATLAS_LIBRARIES} ITTI dl OPT
   )
 conditional_target_link_libraries(T_TRACER nr_dlschsim PRIVATE T)
 target_link_libraries(nr_dlschsim PRIVATE asn1_nr_rrc asn1_lte_rrc)
@@ -2469,7 +2471,7 @@ add_executable(nr_pbchsim
   )
 target_link_libraries(nr_pbchsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ITTI dl
+  m pthread ${ATLAS_LIBRARIES} ITTI dl OPT
 )
 conditional_target_link_libraries(T_TRACER nr_pbchsim PRIVATE T)
 target_link_libraries(nr_pbchsim PRIVATE asn1_nr_rrc asn1_lte_rrc)
@@ -2484,7 +2486,7 @@ add_executable(nr_pucchsim
   )
 target_link_libraries(nr_pucchsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ITTI dl
+  m pthread ${ATLAS_LIBRARIES} ITTI dl OPT
 )
 conditional_target_link_libraries(T_TRACER nr_pucchsim PRIVATE T)
 target_link_libraries(nr_pucchsim PRIVATE asn1_nr_rrc asn1_lte_rrc)
@@ -2502,7 +2504,7 @@ add_executable(nr_dlsim
   )
 target_link_libraries(nr_dlsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON lte_rrc nr_rrc CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE x2ap SECU_CN ngap NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB -lz -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ITTI ${OPENSSL_LIBRARIES} dl
+  m pthread ${ATLAS_LIBRARIES} ITTI ${OPENSSL_LIBRARIES} dl OPT
   )
 conditional_target_link_libraries(T_TRACER nr_dlsim PRIVATE T)
 target_link_libraries(nr_dlsim PRIVATE asn1_nr_rrc asn1_lte_rrc)
@@ -2519,7 +2521,7 @@ add_executable(nr_prachsim
   ${SHLIB_LOADER_SOURCES})
 target_link_libraries(nr_prachsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON lte_rrc nr_rrc CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE x2ap SECU_CN ngap NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB -lz -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ITTI ${OPENSSL_LIBRARIES} dl)
+  m pthread ${ATLAS_LIBRARIES} ITTI ${OPENSSL_LIBRARIES} dl OPT)
 conditional_target_link_libraries(T_TRACER nr_prachsim PRIVATE T)
 target_link_libraries(nr_prachsim PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
@@ -2532,7 +2534,7 @@ add_executable(nr_ulschsim
   )
 target_link_libraries(nr_ulschsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ITTI dl
+  m pthread ${ATLAS_LIBRARIES} ITTI dl OPT
 )
 conditional_target_link_libraries(T_TRACER nr_ulschsim PRIVATE T)
 target_link_libraries(nr_ulschsim PRIVATE asn1_nr_rrc asn1_lte_rrc)
@@ -2555,7 +2557,7 @@ endif ()
 
 target_link_libraries(nr_ulsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON lte_rrc nr_rrc CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE x2ap SECU_CN ngap NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB -lz -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ITTI ${OPENSSL_LIBRARIES} dl
+  m pthread ${ATLAS_LIBRARIES} ITTI ${OPENSSL_LIBRARIES} dl OPT
   )
 conditional_target_link_libraries(T_TRACER nr_ulsim PRIVATE T)
 target_link_libraries(nr_ulsim PRIVATE asn1_nr_rrc asn1_lte_rrc)
@@ -2573,7 +2575,7 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
     )
   target_link_libraries (${myExe} PRIVATE
     -Wl,--start-group SIMU UTIL SCHED_LIB SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_NR_COMMON PHY PHY_UE PHY_RU ITTI -Wl,--end-group
-    pthread m rt CONFIG_LIB ${ATLAS_LIBRARIES}  ${XFORMS_LIBRARIES} dl
+    pthread m rt CONFIG_LIB ${ATLAS_LIBRARIES}  ${XFORMS_LIBRARIES} dl OPT
     )
   conditional_target_link_libraries(T_TRACER ${myExe} PRIVATE T)
   target_link_libraries(${myExe} PRIVATE asn1_nr_rrc asn1_lte_rrc)
