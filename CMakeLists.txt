@@ -2468,8 +2468,8 @@ endif ()
 target_link_libraries(nr-softmodem PRIVATE
   asn1_lte_rrc asn1_nr_rrc asn1_s1ap asn1_ngap asn1_m2ap asn1_m3ap asn1_x2ap asn1_f1ap asn1_lpp)
 
-add_executable(cu-up
-  executables/cuup.c
+add_executable(nr-cuup
+  executables/nr-cuup.c
   executables/softmodem-common.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
@@ -2482,7 +2482,11 @@ add_executable(cu-up
   ${SHLIB_LOADER_SOURCES}
   )
 
-target_link_libraries(cu-up -Wl,--start-group CONFIG_LIB ITTI SCTP_CLIENT SECU_OSA GTPV1U e1ap e1_pdcp_if asn1_lte_rrc asn1_nr_rrc asn1_f1ap ${OPENSSL_LIBRARIES}  -Wl,--end-group crypt z sctp dl)
+target_link_libraries(nr-cuup PRIVATE
+                      CONFIG_LIB ITTI SCTP_CLIENT
+                      GTPV1U e1ap e1_pdcp_if f1ap
+                      SECU_OSA ${OPENSSL_LIBRARIES} crypt z sctp dl pthread)
+target_link_libraries(nr-cuup PRIVATE asn1_lte_rrc asn1_nr_rrc)
                       
 # nr-uesoftmodem is  UE implementation
 #######################################

@@ -172,7 +172,7 @@ void *gNB_app_task(void *args_p)
     }
 
     if (node_type == ngran_gNB_CUUP) {
-      AssertFatal(false, "To run CU-UP use executable cu-up\n");
+      AssertFatal(false, "To run CU-UP use executable nr-cuup\n");
     }
 
     if (NODE_IS_DU(node_type)) {
