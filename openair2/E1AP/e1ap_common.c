@@ -166,7 +166,7 @@ int e1ap_decode_pdu(E1AP_E1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t 
                         0,
                         0);
 
-  if (asn1_xer_print) {
+  if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
     LOG_E(E1AP, "----------------- ASN1 DECODER PRINT START----------------- \n");
     xer_fprint(stdout, &asn_DEF_E1AP_E1AP_PDU, pdu);
     LOG_E(E1AP, "----------------- ASN1 DECODER PRINT END ----------------- \n");
@@ -199,7 +199,7 @@ int e1ap_encode_send(E1_t type, e1ap_setup_req_t *setupReq, E1AP_E1AP_PDU_t *pdu
 {
   DevAssert(pdu != NULL);
 
-  if (asn1_xer_print) {
+  if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
     LOG_E(E1AP, "----------------- ASN1 ENCODER PRINT START ----------------- \n");
     xer_fprint(stdout, &asn_DEF_E1AP_E1AP_PDU, pdu);
     LOG_E(E1AP, "----------------- ASN1 ENCODER PRINT END----------------- \n");

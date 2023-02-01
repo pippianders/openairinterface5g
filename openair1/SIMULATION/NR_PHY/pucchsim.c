@@ -67,23 +67,6 @@ const short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 PHY_VARS_NR_UE * PHY_vars_UE_g[1][1]={{NULL}};
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
-nfapi_mode_t nfapi_mod;
-nfapi_mode_t nfapi_getmode(void) {
-  return nfapi_mod;
-}
-void nfapi_setmode(nfapi_mode_t nfapi_mode) { nfapi_mod=nfapi_mode; }
-
-NR_IF_Module_t *NR_IF_Module_init(int Mod_id) {return(NULL);}
-
-int pack_nr_srs_normalized_channel_iq_matrix(void *pMessageBuf, void *pPackedBuf, uint32_t packedBufLen)
-{
-  return 0;
-}
-
-int pack_nr_srs_beamforming_report(void *pMessageBuf, void *pPackedBuf, uint32_t packedBufLen)
-{
-  return 0;
-}
 
 nrUE_params_t nrUE_params={0};
 
