@@ -360,6 +360,7 @@ class Containerize():
 				if result is not None:
 					imageNames.append(('oai-enb', 'eNB'))
 					imageNames.append(('oai-gnb', 'gNB'))
+					imageNames.append(('oai-nr-cuup', 'nr-cuup'))
 					imageNames.append(('oai-lte-ue', 'lteUE'))
 					imageNames.append(('oai-nr-ue', 'nrUE'))
 					if self.host == 'Red Hat':
