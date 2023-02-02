@@ -80,6 +80,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "gnb_config.h"
 #include "openair2/E1AP/e1ap_common.h"
+#include "openair2/E1AP/e1ap_api.h"
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -402,7 +403,7 @@ int create_gNB_tasks(void) {
 
     // If CU
     if (node_type == ngran_gNB_CU || node_type == ngran_gNB) {
-      MessageDef *msg = RCconfig_NR_CU_E1(true);
+      MessageDef *msg = RCconfig_NR_CU_E1(false);
       instance_t inst = 0;
       createE1inst(UPtype, inst, &E1AP_SETUP_REQ(msg));
       cuup_init_n3(inst);
