@@ -402,7 +402,7 @@ int create_gNB_tasks(void) {
 
     // If CU
     if (node_type == ngran_gNB_CU || node_type == ngran_gNB) {
-      MessageDef *msg = RCconfig_NR_CU_E1(false);
+      MessageDef *msg = RCconfig_NR_CU_E1(true);
       instance_t inst = 0;
       createE1inst(UPtype, inst, &E1AP_SETUP_REQ(msg));
       cuup_init_n3(inst);
