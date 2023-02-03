@@ -29,6 +29,7 @@
 #include "common/config/config_userapi.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/nr/nr_common.h"
+#include "common/utils/var_array.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
@@ -67,7 +68,6 @@
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "executables/nr-uesoftmodem.h"
-#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 //#define DEBUG_ULSIM
 
 const char *__asan_default_options()
@@ -75,6 +75,8 @@ const char *__asan_default_options()
   /* don't do leak checking in nr_ulsim, not finished yet */
   return "detect_leaks=0";
 }
+
+LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
 
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
@@ -130,14 +132,6 @@ rrc_data_ind(
 {
 }
 
-int
-nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-  const protocol_ctxt_t *const ctxt_pP,
-  const gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP,
-  uint8_t                         *inde_list
-){
-  return 0;
-}
 
 // Dummy function to avoid linking error at compilation of nr-ulsim
 int is_x2ap_enabled(void)
@@ -172,6 +166,18 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
 }
 
 nr_bler_struct nr_bler_data[NR_NUM_MCS];
+
+//nFAPI P7 dummy functions
+
+int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0);  }
+int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req){ return(0);  }
+int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req){ return(0);  }
+int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req){ return(0);  }
+int oai_nfapi_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_crc_indication(nfapi_nr_crc_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_srs_indication(nfapi_nr_srs_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_uci_indication(nfapi_nr_uci_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_rach_indication(nfapi_nr_rach_indication_t *ind) { return(0);  }
 
 int nr_derive_key(int alg_type, uint8_t alg_id,
                const uint8_t key[32], uint8_t **out)

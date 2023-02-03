@@ -80,6 +80,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "gnb_config.h"
 #include "openair2/E1AP/e1ap_common.h"
+#include "openair2/E1AP/e1ap_api.h"
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -291,7 +292,7 @@ void exit_function(const char *file, const char *function, const int line, const
 
 
 
-int create_gNB_tasks(void) {
+static int create_gNB_tasks(void) {
   uint32_t                        gnb_nb = RC.nb_nr_inst; 
   uint32_t                        gnb_id_start = 0;
   uint32_t                        gnb_id_end = gnb_id_start + gnb_nb;
@@ -640,8 +641,10 @@ int main( int argc, char **argv ) {
     RCconfig_NR_L1();
 
   // don't create if node doesn't connect to RRC/S1/GTP
-  int ret=create_gNB_tasks();
-  AssertFatal(ret==0,"cannot create ITTI tasks\n");
+  if (NFAPI_MODE != NFAPI_MODE_PNF) {
+    int ret = create_gNB_tasks();
+    AssertFatal(ret == 0, "cannot create ITTI tasks\n");
+  }
 
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);
@@ -656,28 +659,6 @@ int main( int argc, char **argv ) {
     pthread_cond_init(&sync_cond,NULL);
     pthread_mutex_init(&sync_mutex, NULL);
   }
-
-  const char *nfapi_mode_str = "<UNKNOWN>";
-
-  switch(NFAPI_MODE) {
-    case 0:
-      nfapi_mode_str = "MONOLITHIC";
-      break;
-
-    case 1:
-      nfapi_mode_str = "PNF";
-      break;
-
-    case 2:
-      nfapi_mode_str = "VNF";
-      break;
-
-    default:
-      nfapi_mode_str = "<UNKNOWN NFAPI MODE>";
-      break;
-  }
-
-  printf("NFAPI MODE:%s\n", nfapi_mode_str);
 
   printf("START MAIN THREADS\n");
   // start the main threads

@@ -1,8 +1,8 @@
 version: '3.8'
 services:
     oai-nrf:
-        container_name: "l2sim-oai-nrf"
-        image: oai-nrf:august-dev
+        container_name: "rfsim5g-oai-nrf"
+        image: oai-nrf:develop
         environment:
             - NRF_INTERFACE_NAME_FOR_SBI=eth0
             - NRF_INTERFACE_PORT_FOR_SBI=80
@@ -14,18 +14,19 @@ services:
             public_net:
                 ipv4_address: 192.168.71.130
         volumes:
-            - ../5g_rfsimulator/nrf-healthcheck.sh:/openair-nrf/bin/nrf-healthcheck.sh
+            - ./nrf-healthcheck.sh:/openair-nrf/bin/nrf-healthcheck.sh
         healthcheck:
             test: /bin/bash -c "/openair-nrf/bin/nrf-healthcheck.sh"
             interval: 10s
             timeout: 5s
             retries: 5
+
     mysql:
-        container_name: "l2sim-mysql"
+        container_name: "rfsim5g-mysql"
         image: mysql:5.7
         volumes:
-            - ../5g_rfsimulator/oai_db.sql:/docker-entrypoint-initdb.d/oai_db.sql
-            - ../5g_rfsimulator/mysql-healthcheck.sh:/tmp/mysql-healthcheck.sh
+            - ./oai_db.sql:/docker-entrypoint-initdb.d/oai_db.sql
+            - ./mysql-healthcheck.sh:/tmp/mysql-healthcheck.sh
         environment:
             - TZ=Europe/Paris
             - MYSQL_DATABASE=oai_db
@@ -40,9 +41,10 @@ services:
         networks:
             public_net:
                 ipv4_address: 192.168.71.131
+
     oai-amf:
-        container_name: "l2sim-oai-amf"
-        image: oai-amf:august-dev
+        container_name: "rfsim5g-oai-amf"
+        image: oai-amf:develop
         environment:
             - TZ=Europe/paris
             - INSTANCE=0
@@ -99,7 +101,7 @@ services:
             - oai-nrf
             - mysql
         volumes:
-            - ../5g_rfsimulator/amf-healthcheck.sh:/openair-amf/bin/amf-healthcheck.sh
+            - ./amf-healthcheck.sh:/openair-amf/bin/amf-healthcheck.sh
         healthcheck:
             test: /bin/bash -c "/openair-amf/bin/amf-healthcheck.sh"
             interval: 10s
@@ -108,9 +110,10 @@ services:
         networks:
             public_net:
                 ipv4_address: 192.168.71.132
+
     oai-smf:
-        container_name: "l2sim-oai-smf"
-        image: oai-smf:august-dev
+        container_name: "rfsim5g-oai-smf"
+        image: oai-smf:develop
         environment:
             - TZ=Europe/Paris
             - INSTANCE=0
@@ -151,7 +154,7 @@ services:
             - oai-nrf
             - oai-amf
         volumes:
-            - ../5g_rfsimulator/smf-healthcheck.sh:/openair-smf/bin/smf-healthcheck.sh
+            - ./smf-healthcheck.sh:/openair-smf/bin/smf-healthcheck.sh
         healthcheck:
             test: /bin/bash -c "/openair-smf/bin/smf-healthcheck.sh"
             interval: 10s
@@ -160,9 +163,10 @@ services:
         networks:
             public_net:
                 ipv4_address: 192.168.71.133
+
     oai-spgwu:
-        container_name: "l2sim-oai-spgwu"
-        image: oai-spgwu-tiny:august-dev
+        container_name: "rfsim5g-oai-spgwu"
+        image: oai-spgwu-tiny:develop
         environment:
             - TZ=Europe/Paris
             - PID_DIRECTORY=/var/run
@@ -201,7 +205,7 @@ services:
             - ALL
         privileged: true
         volumes:
-            - ../5g_rfsimulator/spgwu-healthcheck.sh:/openair-spgwu-tiny/bin/spgwu-healthcheck.sh
+            - ./spgwu-healthcheck.sh:/openair-spgwu-tiny/bin/spgwu-healthcheck.sh
         healthcheck:
             test: /bin/bash -c "/openair-spgwu-tiny/bin/spgwu-healthcheck.sh"
             interval: 10s
@@ -212,12 +216,14 @@ services:
                 ipv4_address: 192.168.71.134
             traffic_net:
                 ipv4_address: 192.168.72.134
+
     oai-ext-dn:
         image: ubuntu:bionic
         privileged: true
-        container_name: "l2sim-oai-ext-dn"
+        container_name: rfsim5g-oai-ext-dn
         entrypoint: /bin/bash -c \
               "apt update; apt install -y procps iptables iproute2 iperf iputils-ping;"\
+              "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE;"\
               "ip route add 12.1.1.0/24 via 192.168.72.134 dev eth0; sleep infinity"
         depends_on:
             - oai-spgwu
@@ -229,78 +235,88 @@ services:
             interval: 10s
             timeout: 5s
             retries: 5
-    oai-gnb:
+
+    oai-cucp:
         image: oai-gnb:develop
         privileged: true
-        container_name: "l2sim-oai-gnb"
-        network_mode: "host"
+        container_name: rfsim5g-oai-cucp
         environment:
-            TZ: Europe/Paris
-            USE_SA_NFAPI_VNF: 'yes'
-            GNB_NAME: gnb-l2sim-vnf
-            TAC: 1
-            MCC: '208'
-            MNC: '99'
-            MNC_LENGTH: 2
-            NSSAI_SST: 1
-            AMF_IP_ADDRESS: 192.168.71.132
-            GNB_NGA_IF_NAME: eno1
-            GNB_NGA_IP_ADDRESS: 172.21.16.128
-            GNB_NGU_IF_NAME: eno1
-            GNB_NGU_IP_ADDRESS: 172.21.16.128
-            LOCAL_S_IF_NAME: 'lo:'
-            REMOTE_S_ADDRESS: 127.0.0.1
-            LOCAL_S_ADDRESS: 127.0.0.2
-            USE_ADDITIONAL_OPTIONS: --sa --nfapi VNF --emulate-l1 --log_config.global_log_options level,time,thread_id,nocolor
+            RFSIMULATOR: server
+            USE_VOLUMED_CONF: 'yes'
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim --log_config.global_log_options level,nocolor,time
         depends_on:
-            - oai-spgwu
-            - oai-amf
+            - oai-ext-dn
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.140
+        volumes:
+            - ../../conf_files/gnb-cucp.sa.conf:/opt/oai-gnb/etc/mounted.conf
         healthcheck:
             test: /bin/bash -c "pgrep nr-softmodem"
             interval: 10s
             timeout: 5s
             retries: 5
 
-    proxy:
-        image: oai-lte-multi-ue-proxy:latest
+    oai-cuup:
+        image: oai-nr-cuup:develop
         privileged: true
-        container_name: "l2sim-proxy"
-        network_mode: "host"
+        container_name: rfsim5g-oai-cuup
         environment:
-            TZ: Europe/Paris
-        command: "/oai-lte-multi-ue-proxy/bin/proxy 1 --nr"
+            RFSIMULATOR: server
+            USE_VOLUMED_CONF: 'yes'
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim
+            #--log_config.global_log_options level,nocolor,time
         depends_on:
-            - oai-gnb
+            - oai-cucp
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.141
+        volumes:
+            - ../../conf_files/gnb-cuup.sa.conf:/opt/oai-gnb/etc/mounted.conf
         healthcheck:
-            test: /bin/bash -c "pgrep proxy"
+            test: /bin/bash -c "pgrep nr-cuup"
             interval: 10s
             timeout: 5s
             retries: 5
 
-    oai-nr-ue0:
+    oai-du:
+        image: oai-gnb:develop
+        privileged: true
+        container_name: rfsim5g-oai-du
+        environment:
+            RFSIMULATOR: server
+            USE_VOLUMED_CONF: 'yes'
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim --log_config.global_log_options level,nocolor,time
+        depends_on:
+            - oai-cucp
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.142
+        volumes:
+            - ../../conf_files/gNB_SA_DU.conf:/opt/oai-gnb/etc/mounted.conf
+        healthcheck:
+            test: /bin/bash -c "pgrep nr-softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    oai-nr-ue:
         image: oai-nr-ue:develop
         privileged: true
-        container_name: "l2sim-oai-nr-ue0"
-        network_mode: "host"
+        container_name: rfsim5g-oai-nr-ue
         environment:
-            TZ: Europe/Paris
-            USE_NFAPI: 'yes'
-            OPENAIR_DIR: /opt/oai-nr-ue
+            RFSIMULATOR: 192.168.71.142
             FULL_IMSI: '208990100001100'
             FULL_KEY: 'fec86ba6eb707ed08905757b1bb44b8f'
             OPC: 'C42449363BBAD02B66D16BC975D77CC1'
             DNN: oai
             NSSAI_SST: 1
-            NSSAI_SD: 0xffffff
-            NR_UE_NFAPI_IF_NAME: eno1
-            GNB_IP_ADDRESS: 127.0.0.1
-            NR_UE_IP_ADDRESS: 127.0.0.1
-            USE_ADDITIONAL_OPTIONS: --nokrnmod 1  --nfapi STANDALONE_PNF --node-number 2 --sa --emulate-l1 --log_config.global_log_options level,time,thread_id,nocolor
-        volumes:
-            - ../../../openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results:/opt/oai-nr-ue/openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim -r 106 --numerology 1 -C 3619200000 --nokrnmod --log_config.global_log_options level,nocolor,time
         depends_on:
-            - oai-gnb
-            - proxy
+            - oai-du
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.150
         healthcheck:
             test: /bin/bash -c "pgrep nr-uesoftmodem"
             interval: 10s
@@ -310,17 +326,17 @@ services:
 networks:
     public_net:
         driver: bridge
-        name: l2sim-oai-public-net
+        name: rfsim5g-oai-public-net
         ipam:
             config:
                 - subnet: 192.168.71.128/26
         driver_opts:
-            com.docker.network.bridge.name: "l2sim-public"
+            com.docker.network.bridge.name: "rfsim5g-public"
     traffic_net:
         driver: bridge
-        name: l2sim-oai-traffic-net
+        name: rfsim5g-oai-traffic_net-net
         ipam:
             config:
                 - subnet: 192.168.72.128/26
         driver_opts:
-            com.docker.network.bridge.name: "l2sim-traffic"
+            com.docker.network.bridge.name: "rfsim5g-traffic"

@@ -1479,7 +1479,6 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
       /* 12.1.3 uLUPTNLInformation_ToBeSetup_List */
       for (int j = 0; j < f1ap_ue_context_modification_req->drbs_to_be_setup[i].up_ul_tnl_length; j++) {
         /* Use a dummy address and teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context modification response from the DU */
-        transport_layer_addr_t addr = { length: 32, buffer: { 0 } };
         asn1cSequenceAdd(drbs_toBeSetupMod_item->uLUPTNLInformation_ToBeSetup_List.list,
                        F1AP_ULUPTNLInformation_ToBeSetup_Item_t, uLUPTNLInformation_ToBeSetup_Item);
         uLUPTNLInformation_ToBeSetup_Item->uLUPTNLInformation.present = F1AP_UPTransportLayerInformation_PR_gTPTunnel;

@@ -155,7 +155,6 @@ set (NFAPI_USER_DIR  ${OPENAIR_DIR}/nfapi/oai_integration)
 set (OPENAIR1_DIR    ${OPENAIR_DIR}/openair1)
 set (OPENAIR2_DIR    ${OPENAIR_DIR}/openair2)
 set (OPENAIR3_DIR    ${OPENAIR_DIR}/openair3)
-set (OPENAIR_TARGETS ${OPENAIR_DIR}/targets)
 set (OPENAIR3_DIR    ${OPENAIR_DIR}/openair3)
 set (OPENAIR_CMAKE   ${OPENAIR_DIR}/cmake_targets)
 set (OPENAIR_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY})
@@ -715,31 +714,6 @@ add_boolean_option(NAS_UE                  True  "NAS UE INSTANCE (<> NAS_MME)")
 ##########################
 add_boolean_option(JUMBO_FRAME             True  "ENABLE LARGE SDU in ACCESS STRATUM (larger than common MTU)")
 
-##########################
-# RLC LAYER OPTIONS
-##########################
-add_boolean_option(TRACE_RLC_PAYLOAD       False "Fatal assert in this case")
-add_boolean_option(RLC_STOP_ON_LOST_PDU    False "Fatal assert in this case")
-
-add_boolean_option(TRACE_RLC_MUTEX         True  "TRACE for RLC, possible problem in thread scheduling")
-add_boolean_option(TRACE_RLC_AM_BO         False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
-add_boolean_option(TRACE_RLC_AM_FREE_SDU   False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
-add_boolean_option(TRACE_RLC_AM_HOLE       False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
-add_boolean_option(TRACE_RLC_AM_PDU        False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
-add_boolean_option(TRACE_RLC_AM_RESEGMENT  False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
-add_boolean_option(TRACE_RLC_AM_RX         False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
-add_boolean_option(TRACE_RLC_AM_TX         False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
-add_boolean_option(TRACE_RLC_AM_TX_STATUS  False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
-add_boolean_option(TRACE_RLC_AM_STATUS_CREATION   False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
-
-add_boolean_option(STOP_ON_IP_TRAFFIC_OVERLOAD      False "")
-add_boolean_option(TRACE_RLC_UM_DAR        False "TRACE for RLC UM, TO BE CHANGED IN A MORE GENERAL FLAG")
-add_boolean_option(TRACE_RLC_UM_DISPLAY_ASCII_DATA  False "TRACE for RLC UM, TO BE CHANGED IN A MORE GENERAL FLAG")
-add_boolean_option(TRACE_RLC_UM_PDU        False "TRACE for RLC UM, TO BE CHANGED IN A MORE GENERAL FLAG")
-add_boolean_option(TRACE_RLC_UM_RX         False "TRACE for RLC UM, TO BE CHANGED IN A MORE GENERAL FLAG")
-add_boolean_option(TRACE_RLC_UM_SEGMENT    False "TRACE for RLC UM, TO BE CHANGED IN A MORE GENERAL FLAG")
-add_boolean_option(TRACE_RLC_UM_TX_STATUS  False "TRACE for RLC UM, TO BE CHANGED IN A MORE GENERAL FLAG")
-
 
 ##########################
 # PDCP LAYER OPTIONS
@@ -799,9 +773,6 @@ include_directories("${OPENAIR2_DIR}/ENB_APP")
 include_directories("${OPENAIR2_DIR}/GNB_APP")
 include_directories("${OPENAIR2_DIR}/MCE_APP")
 include_directories("${OPENAIR2_DIR}/LAYER2/RLC")
-include_directories("${OPENAIR2_DIR}/LAYER2/RLC/AM_v9.3.0")
-include_directories("${OPENAIR2_DIR}/LAYER2/RLC/UM_v9.3.0")
-include_directories("${OPENAIR2_DIR}/LAYER2/RLC/TM_v9.3.0")
 include_directories("${OPENAIR2_DIR}/LAYER2/PDCP_v10.1.0")
 include_directories("${OPENAIR2_DIR}/RRC/LTE/MESSAGES")
 include_directories("${OPENAIR2_DIR}/RRC/LTE")
@@ -826,7 +797,6 @@ include_directories("${OPENAIR2_DIR}/F1AP")
 include_directories("${OPENAIR3_DIR}/ocp-gtpu")
 include_directories("${OPENAIR3_DIR}/M3AP")
 include_directories("${OPENAIR3_DIR}/MME_APP")
-include_directories("${OPENAIR_DIR}/targets/COMMON")
 include_directories("${OPENAIR_DIR}/radio/COMMON")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PHY")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC")
@@ -858,8 +828,6 @@ add_library(HASHTABLE
 include_directories(${OPENAIR_DIR}/common/utils/hashtable)
 
 add_library(UTIL
-  ${OPENAIR2_DIR}/UTIL/LISTS/list.c
-  ${OPENAIR2_DIR}/UTIL/LISTS/list2.c
   ${OPENAIR_DIR}/common/utils/LOG/log.c
   ${OPENAIR_DIR}/common/utils/LOG/vcd_signal_dumper.c
   ${OPENAIR2_DIR}/UTIL/MATH/oml.c
@@ -1403,44 +1371,10 @@ set(NR_UE_MAC_DIR ${OPENAIR2_DIR}/LAYER2/NR_MAC_UE)
 set(PHY_INTERFACE_DIR ${OPENAIR2_DIR}/PHY_INTERFACE)
 set(NR_PHY_INTERFACE_DIR ${OPENAIR2_DIR}/NR_PHY_INTERFACE)
 set(NR_UE_PHY_INTERFACE_DIR ${OPENAIR2_DIR}/NR_UE_PHY_INTERFACE)
-set(RLC_DIR ${OPENAIR2_DIR}/LAYER2/RLC)
-set(RLC_UM_DIR ${OPENAIR2_DIR}/LAYER2/RLC/UM_v9.3.0)
-set(RLC_AM_DIR ${OPENAIR2_DIR}/LAYER2/RLC/AM_v9.3.0)
-set(RLC_TM_DIR ${OPENAIR2_DIR}/LAYER2/RLC/TM_v9.3.0)
 set(RRC_DIR ${OPENAIR2_DIR}/RRC/LTE)
 set(NR_RRC_DIR ${OPENAIR2_DIR}/RRC/NR)
 set(NR_UE_RRC_DIR ${OPENAIR2_DIR}/RRC/NR_UE)
 set(PDCP_DIR  ${OPENAIR2_DIR}/LAYER2/PDCP_v10.1.0)
-
-set(RLC_V1
-  ${RLC_AM_DIR}/rlc_am.c
-  ${RLC_AM_DIR}/rlc_am_init.c
-  ${RLC_AM_DIR}/rlc_am_timer_poll_retransmit.c
-  ${RLC_AM_DIR}/rlc_am_timer_reordering.c
-  ${RLC_AM_DIR}/rlc_am_timer_status_prohibit.c
-  ${RLC_AM_DIR}/rlc_am_segment.c
-  ${RLC_AM_DIR}/rlc_am_segments_holes.c
-  ${RLC_AM_DIR}/rlc_am_in_sdu.c
-  ${RLC_AM_DIR}/rlc_am_receiver.c
-  ${RLC_AM_DIR}/rlc_am_retransmit.c
-  ${RLC_AM_DIR}/rlc_am_windows.c
-  ${RLC_AM_DIR}/rlc_am_rx_list.c
-  ${RLC_AM_DIR}/rlc_am_reassembly.c
-  ${RLC_AM_DIR}/rlc_am_status_report.c
-  ${RLC_TM_DIR}/rlc_tm.c
-  ${RLC_TM_DIR}/rlc_tm_init.c
-  ${RLC_UM_DIR}/rlc_um.c
-  ${RLC_UM_DIR}/rlc_um_fsm.c
-  ${RLC_UM_DIR}/rlc_um_control_primitives.c
-  ${RLC_UM_DIR}/rlc_um_segment.c
-  ${RLC_UM_DIR}/rlc_um_reassembly.c
-  ${RLC_UM_DIR}/rlc_um_receiver.c
-  ${RLC_UM_DIR}/rlc_um_dar.c
-  ${RLC_DIR}/rlc_mac.c
-  ${RLC_DIR}/rlc.c
-  ${RLC_DIR}/rlc_rrc.c
-  ${RLC_DIR}/rlc_mpls.c
-  )
 
 set(RLC_V2
   ${OPENAIR2_DIR}/LAYER2/rlc_v2/rlc_oai_api.c
@@ -1707,7 +1641,7 @@ add_library(e1_if
   ${NR_RRC_DIR}/cucp_cuup_e1ap.c
   )
 
-target_link_libraries(e1_if PRIVATE asn1_nr_rrc asn1_lte_rrc asn1_f1ap e1ap)
+target_link_libraries(e1_if PRIVATE asn1_nr_rrc asn1_lte_rrc asn1_f1ap e1ap GTPV1U)
 
 add_library(e1_pdcp_if
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_e1_api.c
@@ -2468,8 +2402,8 @@ endif ()
 target_link_libraries(nr-softmodem PRIVATE
   asn1_lte_rrc asn1_nr_rrc asn1_s1ap asn1_ngap asn1_m2ap asn1_m3ap asn1_x2ap asn1_f1ap asn1_lpp)
 
-add_executable(cu-up
-  executables/cuup.c
+add_executable(nr-cuup
+  executables/nr-cuup.c
   executables/softmodem-common.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
@@ -2482,7 +2416,11 @@ add_executable(cu-up
   ${SHLIB_LOADER_SOURCES}
   )
 
-target_link_libraries(cu-up -Wl,--start-group CONFIG_LIB ITTI SCTP_CLIENT SECU_OSA GTPV1U e1ap e1_pdcp_if asn1_lte_rrc asn1_nr_rrc asn1_f1ap ${OPENSSL_LIBRARIES}  -Wl,--end-group crypt z sctp dl)
+target_link_libraries(nr-cuup PRIVATE
+                      CONFIG_LIB ITTI SCTP_CLIENT
+                      GTPV1U e1ap e1_pdcp_if f1ap
+                      SECU_OSA ${OPENSSL_LIBRARIES} crypt z sctp dl pthread)
+target_link_libraries(nr-cuup PRIVATE asn1_lte_rrc asn1_nr_rrc)
                       
 # nr-uesoftmodem is  UE implementation
 #######################################
@@ -2557,7 +2495,8 @@ add_executable(rftest
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${SHLIB_LOADER_SOURCES}
 )
-target_link_libraries(rftest minimal_lib CONFIG_LIB PHY_NR_COMMON UTIL pthread dl m forms ${T_LIB} )
+target_link_libraries(rftest PRIVATE minimal_lib CONFIG_LIB PHY_NR_COMMON UTIL pthread dl m forms ${T_LIB} )
+target_link_libraries(rftest PRIVATE asn1_lte_rrc asn1_nr_rrc)
 
 add_executable(polartest
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c

@@ -70,7 +70,7 @@ Note: A 5G core must be running at this point. Steps to start the OAI 5G core ca
 Note that `min_rxtxtime` should be set to `6` only when you are connecting an OAI UE to the gNB. And `--rfsim` if you are running the test with rfsimulator.
 
 2. We start the CUUP and DU (in any order)
-CUUP (has its own executable):```sudo ./cu-up -O ../../../ci-scripts/conf_files/gnb-cuup.sa.conf --rfsim --sa```
+CUUP (has its own executable):```sudo ./nr-cuup -O ../../../ci-scripts/conf_files/gnb-cuup.sa.conf --rfsim --sa```
 DU:```sudo ./nr-softmodem -O ../../../ci-scripts/conf_files/gNB_SA_DU.conf --rfsim --sa```
 
 3. Start OAI UE or COTS UE.

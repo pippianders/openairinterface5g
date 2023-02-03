@@ -1,3 +1,24 @@
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
 #include "common/utils/simple_executable.h"
 #include "executables/softmodem-common.h"
 #include "common/utils/ocp_itti/intertask_interface.h"
@@ -22,12 +43,10 @@ void exit_function(const char *file, const char *function, const int line, const
 }
 
 nfapi_mode_t nfapi_mod = -1;
-
 void nfapi_setmode(nfapi_mode_t nfapi_mode)
 {
   nfapi_mod = nfapi_mode;
 }
-
 nfapi_mode_t nfapi_getmode(void)
 {
   return nfapi_mod;
@@ -38,16 +57,16 @@ ngran_node_t get_node_type()
   return ngran_gNB_CUUP;
 }
 
-rlc_op_status_t rlc_data_req(const protocol_ctxt_t *const,
-                             const srb_flag_t,
-                             const MBMS_flag_t,
-                             const rb_id_t,
-                             const mui_t,
-                             const confirm_t,
-                             const sdu_size_t,
-                             mem_block_t *const,
-                             const uint32_t *const,
-                             const uint32_t *const)
+rlc_op_status_t rlc_data_req(const protocol_ctxt_t *const pc,
+                             const srb_flag_t sf,
+                             const MBMS_flag_t mf,
+                             const rb_id_t rb_id,
+                             const mui_t mui,
+                             const confirm_t c,
+                             const sdu_size_t size,
+                             mem_block_t *const buf,
+                             const uint32_t *const a,
+                             const uint32_t *const b)
 {
   abort();
   return 0;
@@ -74,12 +93,12 @@ void nr_rlc_bearer_init_ul_spec(struct NR_LogicalChannelConfig *mac_LogicalChann
   abort();
 }
 
-rlc_op_status_t nr_rrc_rlc_config_asn1_req(const protocol_ctxt_t *const ctxt_pP,
-                                           const NR_SRB_ToAddModList_t *const srb2add_listP,
-                                           const NR_DRB_ToAddModList_t *const drb2add_listP,
-                                           const NR_DRB_ToReleaseList_t *const drb2release_listP,
-                                           const LTE_PMCH_InfoList_r9_t *const pmch_InfoList_r9_pP,
-                                           struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list)
+rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
+    const NR_SRB_ToAddModList_t   * const srb2add_listP,
+    const NR_DRB_ToAddModList_t   * const drb2add_listP,
+    const NR_DRB_ToReleaseList_t  * const drb2release_listP,
+    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list)
+
 {
   abort();
   return 0;
@@ -133,10 +152,13 @@ int main(int argc, char **argv)
   AssertFatal(rc >= 0, "Create task for CUUP E1 failed\n");
   pdcp_layer_init();
   MessageDef *msg = RCconfig_NR_CU_E1(true);
-  if (msg)
-    itti_send_msg_to_task(TASK_CUUP_E1, 0, msg);
-  else
-    AssertFatal(false, "Send inti to task for E1AP UP failed\n");
-  sleep(3600 * 24 * 1000);
+  AssertFatal(msg != NULL, "Send init to task for E1AP UP failed\n");
+  itti_send_msg_to_task(TASK_CUUP_E1, 0, msg);
+
+  printf("TYPE <CTRL-C> TO TERMINATE\n");
+  itti_wait_tasks_end();
+
+  logClean();
+  printf("Bye.\n");
   return 0;
 }
