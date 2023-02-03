@@ -36,7 +36,7 @@
 #include "common/utils/LOG/log.h"
 #include "rrc_gNB_UE_context.h"
 
-RB_HEAD(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s) rrc_ue_head = RB_INITIALIZER(NoTUsed); // ue_context tree key search by rnti
+static RB_HEAD(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s) rrc_ue_head = RB_INITIALIZER(NoTUsed); // ue_context tree key search by rnti
 
 RB_PROTOTYPE(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s, entries, rrc_gNB_compare_ue_rnti_id);
 

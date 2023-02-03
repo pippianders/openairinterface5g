@@ -36,7 +36,7 @@
 #include "NR_CG-Config.h"
 //#include "NR_SRB-ToAddModList.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
-#include "openair2/RRC/LTE/rrc_eNB_GTPV1U.h"
+#include "openair2/RRC/NR/rrc_gNB_GTPV1U.h"
 #include "executables/softmodem-common.h"
 #include "executables/nr-softmodem.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
@@ -109,8 +109,8 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
   MessageDef *msg;
   msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_ENDC_SGNB_ADDITION_REQ_ACK);
-  gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
-  gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
+  gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
+  gtpv1u_gnb_create_tunnel_resp_t create_tunnel_resp;
   protocol_ctxt_t ctxt={0};
   unsigned char *kUPenc = NULL;
   unsigned char *kUPint = NULL;
@@ -250,53 +250,40 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
         memcpy(&UE->e_rab[i].param.sgw_addr, &m->e_rabs_tobeadded[i].sgw_addr, sizeof(transport_layer_addr_t));
         UE->nb_of_e_rabs++;
         //Fill the required E-RAB specific information for the creation of the S1-U tunnel between the gNB and the SGW
+        /*
         create_tunnel_req.eps_bearer_id[i] = UE->e_rab[i].param.e_rab_id;
         create_tunnel_req.sgw_S1u_teid[i] = UE->e_rab[i].param.gtp_teid;
         memcpy(&create_tunnel_req.sgw_addr[i], &UE->e_rab[i].param.sgw_addr, sizeof(transport_layer_addr_t));
+        */
         inde_list[i] = i;
-        LOG_I(RRC,"S1-U tunnel: index %d target sgw ip %d.%d.%d.%d length %d gtp teid %u\n",
-              i,
-              create_tunnel_req.sgw_addr[i].buffer[0],
-              create_tunnel_req.sgw_addr[i].buffer[1],
-              create_tunnel_req.sgw_addr[i].buffer[2],
-              create_tunnel_req.sgw_addr[i].buffer[3],
-              create_tunnel_req.sgw_addr[i].length,
-              create_tunnel_req.sgw_S1u_teid[i]);
       }
 
-      create_tunnel_req.rnti           = ue_context_p->ue_id_rnti;
+      /*create_tunnel_req.           = ue_context_p->ue_id_rnti;
       create_tunnel_req.num_tunnels    = m->nb_e_rabs_tobeadded;
       rrc_gNB_insert_ue_context(ue_context_p);
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, ue_context_p->ue_id_rnti, 0, 0,rrc->module_id);
       memset(&create_tunnel_resp, 0, sizeof(create_tunnel_resp));
       if (!IS_SOFTMODEM_NOS1) {
         LOG_D(RRC, "Calling gtpv1u_create_s1u_tunnel()\n");
-        gtpv1u_create_s1u_tunnel(
+        gtpv1u_create_ngu_tunnel(
           ctxt.instance,
           &create_tunnel_req,
           &create_tunnel_resp);
-        rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
+        nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
           &ctxt,
           &create_tunnel_resp,
           &inde_list[0]);
       }
+      */
       X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).nb_e_rabs_admitted_tobeadded = m->nb_e_rabs_tobeadded;
       X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).target_assoc_id = m->target_assoc_id;
 
       for (int i = 0; i < UE->nb_of_e_rabs; i++) {
         X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].e_rab_id = UE->e_rab[i].param.e_rab_id;
-        X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gtp_teid = create_tunnel_resp.enb_S1u_teid[i];
-        memcpy(&X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gnb_addr, &create_tunnel_resp.enb_addr, sizeof(transport_layer_addr_t));
+        X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gtp_teid = create_tunnel_resp.gnb_NGu_teid[i];
+        memcpy(&X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gnb_addr, &create_tunnel_resp.gnb_addr, sizeof(transport_layer_addr_t));
         //The length field in the X2AP targetting structure is expected in bits but the create_tunnel_resp returns the address length in bytes
-        X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gnb_addr.length = create_tunnel_resp.enb_addr.length*8;
-        LOG_I(RRC,"S1-U create_tunnel_resp tunnel: index %d target gNB ip %d.%d.%d.%d length %d gtp teid %u\n",
-              i,
-              create_tunnel_resp.enb_addr.buffer[0],
-              create_tunnel_resp.enb_addr.buffer[1],
-              create_tunnel_resp.enb_addr.buffer[2],
-              create_tunnel_resp.enb_addr.buffer[3],
-              create_tunnel_resp.enb_addr.length,
-              create_tunnel_resp.enb_S1u_teid[i]);
+        X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gnb_addr.length = create_tunnel_resp.gnb_addr.length*8;
         LOG_I(RRC,"X2AP sGNB Addition Request: index %d target gNB ip %d.%d.%d.%d length %d gtp teid %u\n",
               i,
               X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).e_rabs_admitted_tobeadded[i].gnb_addr.buffer[0],
@@ -376,7 +363,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
 void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
   protocol_ctxt_t      ctxt;
   rrc_gNB_ue_context_t *ue_context;
-  int                  e_rab;
 
   LOG_D(RRC, "calling rrc_remove_nsa_user rnti %d\n", rnti);
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, rnti, 0, 0, rrc->module_id);
@@ -393,18 +379,7 @@ void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
 
   // WHAT A RACE CONDITION
   mac_remove_nr_ue(RC.nrmac[rrc->module_id], rnti);
-  gtpv1u_enb_delete_tunnel_req_t tmp={0};
-  tmp.rnti=rnti;
-  tmp.from_gnb=1;
-  LOG_D(RRC, "ue_context->ue_context.nb_of_e_rabs %d will be deleted for rnti %d\n", ue_context->ue_context.nb_of_e_rabs, rnti);
-  for (e_rab = 0; e_rab < ue_context->ue_context.nb_of_e_rabs; e_rab++) {
-    tmp.eps_bearer_id[tmp.num_erab++]= ue_context->ue_context.gnb_gtp_ebi[e_rab];
-    // erase data
-    ue_context->ue_context.gnb_gtp_teid[e_rab] = 0;
-    memset(&ue_context->ue_context.gnb_gtp_addrs[e_rab], 0, sizeof(ue_context->ue_context.gnb_gtp_addrs[e_rab]));
-    ue_context->ue_context.gnb_gtp_ebi[e_rab] = 0;
-  }
-  gtpv1u_delete_s1u_tunnel(rrc->module_id,  &tmp);
+  e1_remove_ue(); 
   /* remove context */
   rrc_gNB_remove_ue_context(rrc, ue_context);
   rrc_gNB_free_mem_UE_context(ue_context);

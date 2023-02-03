@@ -1082,27 +1082,7 @@ void rrc_gNB_process_RRCConnectionReestablishmentComplete(const protocol_ctxt_t 
   fill_SRB_configList(ue_context_pP, &SRB_configList);
 
   if (get_softmodem_params()->sa) {
-    int j;
-
-    gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req={0};
-    /* Save e RAB information for later */
-
-    for (j = 0, i = 0; i < sizeofArray(UE->pduSession); i++) {
-      if (UE->pduSession[i].statusE1 == PDU_SESSION_existing) {
-        create_tunnel_req.pdusession_id[j] = i;
-        create_tunnel_req.outgoing_teid[j] = UE->pduSession[i].gtp_teid;
-        // to be developped, use the first QFI only
-        create_tunnel_req.outgoing_qfi[j] = UE->pduSession[i].qos[0].qfi;
-        memcpy(create_tunnel_req.dst_addr[j].buffer, UE->pduSession[i].upf_addr.buffer, sizeof(uint8_t) * 20);
-        create_tunnel_req.dst_addr[j].length = UE->pduSession[i].upf_addr.length;
-        j++;
-      }
-    }
-
-    create_tunnel_req.ue_id = ctxt_pP->rntiMaybeUEid; // warning put zero above
-    create_tunnel_req.num_tunnels    = j;
-    int ret = gtpv1u_update_ngu_tunnel(ctxt_pP->instance, &create_tunnel_req, reestablish_rnti);
-
+    e1_reestablish_pdusession();
     UE->ue_release_timer_s1 = 1;
     UE->ue_release_timer_thres_s1 = 100;
     UE->ue_release_timer = 0;
@@ -1275,6 +1255,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
       case NR_UL_CCCH_MessageType__c1_PR_rrcSetupRequest:
         LOG_D(NR_RRC, "Received RRCSetupRequest on UL-CCCH-Message (UE rnti %lx)\n", ctxt_pP->rntiMaybeUEid);
         ue_context_p = rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rntiMaybeUEid);
+        gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
         if (ue_context_p != NULL) {
           rrc_gNB_free_mem_UE_context(ue_context_p);
         } else {
@@ -1324,6 +1305,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
               rrc_gNB_remove_ue_context(RC.nrrrc[ctxt_pP->module_id], ue_context_p);
               /* and insert again, after changing rnti everywhere it has to be changed */
               ue_context_p->ue_id_rnti = ctxt_pP->rntiMaybeUEid;
+              gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
               UE->rnti = ctxt_pP->rntiMaybeUEid;
               rrc_gNB_insert_ue_context(ue_context_p);
               /* reset timers */
@@ -1342,6 +1324,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
               }
 
               if (ue_context_p != NULL) {
+                gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
                 UE->Initialue_identity_5g_s_TMSI.presence = true;
                 UE->ng_5G_S_TMSI_Part1 = s_tmsi_part1;
               }
@@ -1349,7 +1332,6 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
           } else {
             /* TODO */
             memcpy(((uint8_t *)&random_value) + 3, rrcSetupRequest->ue_Identity.choice.randomValue.buf, rrcSetupRequest->ue_Identity.choice.randomValue.size);
-
             rrc_gNB_new_ue_context(ctxt_pP->rntiMaybeUEid, RC.nrrrc[ctxt_pP->module_id], random_value);
             LOG_E(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT " RRCSetupRequest without random UE identity or S-TMSI not supported, let's reject the UE\n", PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
             rrc_gNB_generate_RRCReject(ctxt_pP, rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rntiMaybeUEid));
@@ -1463,14 +1445,6 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
             protocol_ctxt_t ctxt_old_p;
             PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt_old_p, ctxt_pP->instance, GNB_FLAG_YES, c_rnti, ctxt_pP->frame, ctxt_pP->subframe);
             rrc_gNB_process_RRCReconfigurationComplete(&ctxt_old_p, ue_context_p, UE->reestablishment_xid);
-
-            for (uint8_t pdusessionid = 0; pdusessionid < sizeofArray(UE->pduSession); pdusessionid++) {
-              if (UE->pduSession[pdusessionid].statusF1 == PDU_SESSION_toCreate) {
-                UE->pduSession[pdusessionid].status = PDU_SESSION_existing;
-              } else {
-                UE->pduSession[pdusessionid].status = PDU_SESSION_failed;
-              }
-            }
           }
           /* reset timers */
           UE->ul_failure_timer = 0;
@@ -1649,17 +1623,7 @@ int rrc_gNB_decode_dcch(const protocol_ctxt_t *const ctxt_pP, const rb_id_t Srb_
           if (UE->pdu_session_release_command_flag == 1) {
             xid = ul_dcch_msg->message.choice.c1->choice.rrcReconfigurationComplete->rrc_TransactionIdentifier;
             UE->pdu_session_release_command_flag = 0;
-            // gtp tunnel delete
-            gtpv1u_gnb_delete_tunnel_req_t req = {0};
-            for (i = 0; i < NB_RB_MAX; i++) {
-              if (xid == UE->pduSession[i].xid) {
-                req.pdusession_id[req.num_pdusession++] = UE->gnb_gtp_psi[i];
-                UE->gnb_gtp_teid[i] = 0;
-                memset(&UE->gnb_gtp_addrs[i], 0, sizeof(UE->gnb_gtp_addrs[i]));
-                UE->gnb_gtp_psi[i] = 0;
-              }
-            }
-            gtpv1u_delete_ngu_tunnel(ctxt_pP->instance, &req);
+            e1_delete_ue();
             // NGAP_PDUSESSION_RELEASE_RESPONSE
             rrc_gNB_send_NGAP_PDUSESSION_RELEASE_RESPONSE(ctxt_pP, ue_context_p, xid);
             rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(ctxt_pP, ue_context_p, ul_dcch_msg->message.choice.c1->choice.rrcReconfigurationComplete->rrc_TransactionIdentifier);
@@ -2210,7 +2174,6 @@ static int rrc_process_DU_DL(MessageDef *msg_p, instance_t instance)
 
             if (rrcReconfiguration_ies->radioBearerConfig) {
               LOG_I(F1AP, "Radio Resource Configuration is present\n");
-              long drb_id;
               int i;
               NR_DRB_ToAddModList_t *DRB_configList = rrcReconfiguration_ies->radioBearerConfig->drb_ToAddModList;
               NR_SRB_ToAddModList_t *SRB_configList = rrcReconfiguration_ies->radioBearerConfig->srb_ToAddModList;
@@ -2234,7 +2197,7 @@ static int rrc_process_DU_DL(MessageDef *msg_p, instance_t instance)
               if (DRB_configList != NULL) {
                 for (i = 0; i < DRB_configList->list.count; i++) { // num max DRB (11-3-8)
                   if (DRB_configList->list.array[i]) {
-                    drb_id = (int)DRB_configList->list.array[i]->drb_Identity;
+                    int drb_id = (int)DRB_configList->list.array[i]->drb_Identity;
                     LOG_I(F1AP,
                           "[DU %d] Logical Channel UL-DCCH, Received RRCConnectionReconfiguration for UE rnti %lx, reconfiguring DRB %d\n",
                           ctxt.module_id,
@@ -2738,7 +2701,7 @@ static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, i
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
 
   e1ap_bearer_setup_req_t req = {0};
-  req.numPDUSessionsMod = UE->nb_of_pdusessions;
+  //req.numPDUSessionsMod = UE->nb_of_pdusessions;
   req.gNB_cu_cp_ue_id = UE->gNB_ue_ngap_id;
   req.rnti = UE->rnti;
   for (int i = 0; i < req.numPDUSessionsMod; i++) {
@@ -2755,6 +2718,7 @@ static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, i
   }
 
   // send the F1 response message up to update F1-U tunnel info
+  e1_pdu_session_update();
   rrc->cucp_cuup.bearer_context_mod(&req, instance);
 
   NR_CellGroupConfig_t *cellGroupConfig = NULL;
@@ -3102,7 +3066,7 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
 
   nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(&ctxt, &create_tunnel_resp);
 
-  UE->setup_pdu_sessions += resp->numPDUSessions;
+  //UE->setup_pdu_sessions += resp->numPDUSessions;
 
   // TODO: SV: combine e1ap_bearer_setup_req_t and e1ap_bearer_setup_resp_t and minimize assignments
   prepare_and_send_ue_context_modification_f1(ue_context_p, resp);
