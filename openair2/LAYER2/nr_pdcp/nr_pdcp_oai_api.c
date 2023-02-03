@@ -626,7 +626,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
 
   if (IS_SOFTMODEM_NOS1 || UE_NAS_USE_TUN) {
     LOG_D(PDCP, "IP packet received with size %d, to be sent to SDAP interface, UE ID/RNTI: %ld\n", size, ue->rntiMaybeUEid);
-    sdap_data_ind(entity->rb_id, entity->is_gnb, entity->has_sdap, entity->has_sdapULheader, entity->pdusession_id, ue->rntiMaybeUEid, buf, size);
+    sdap_data_ind(entity->rb_id, entity->is_gnb, entity->has_sdap_rx, entity->pdusession_id, ue->rntiMaybeUEid, buf, size);
   }
   else{
     for (i = 0; i < MAX_DRBS_PER_UE; i++) {
@@ -642,7 +642,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
     rb_found:
     {
       LOG_D(PDCP, "%s() (drb %d) sending message to SDAP size %d\n", __func__, rb_id, size);
-      sdap_data_ind(rb_id, ue->drb[rb_id - 1]->is_gnb, ue->drb[rb_id - 1]->has_sdap, ue->drb[rb_id - 1]->has_sdapULheader, ue->drb[rb_id - 1]->pdusession_id, ue->rntiMaybeUEid, buf, size);
+      sdap_data_ind(rb_id, ue->drb[rb_id - 1]->is_gnb, ue->drb[rb_id - 1]->has_sdap_rx, ue->drb[rb_id - 1]->pdusession_id, ue->rntiMaybeUEid, buf, size);
     }
   }
 }
@@ -863,7 +863,7 @@ static void add_srb(int is_gnb, ue_id_t rntiMaybeUEid, struct NR_SRB_ToAddMod *s
     LOG_D(PDCP, "%s:%d:%s: warning SRB %d already exist for UE ID/RNTI %ld, do nothing\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rntiMaybeUEid);
   } else {
     pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id,
-                                  0, 0, 0, 0, // sdap parameters
+                                  0, false, false, // sdap parameters
                                   deliver_sdu_srb, ue, deliver_pdu_srb, ue,
                                   12, t_Reordering, -1,
                                   ciphering_algorithm,
@@ -914,9 +914,8 @@ void add_drb_am(int is_gnb, ue_id_t rntiMaybeUEid, struct NR_DRB_ToAddMod *s, in
   }
 
   int pdusession_id;
-  int has_sdap = 0;
-  int has_sdapULheader=0;
-  int has_sdapDLheader=0;
+  bool has_sdap_rx = false;
+  bool has_sdap_tx = false;
   bool is_sdap_DefaultDRB = false;
   NR_QFI_t *mappedQFIs2Add = NULL;
   uint8_t mappedQFIs2AddCount=0;
@@ -928,9 +927,13 @@ void add_drb_am(int is_gnb, ue_id_t rntiMaybeUEid, struct NR_DRB_ToAddMod *s, in
       exit(-1);
     }
     pdusession_id = s->cnAssociation->choice.sdap_Config->pdu_Session;
-    has_sdapULheader = s->cnAssociation->choice.sdap_Config->sdap_HeaderUL == NR_SDAP_Config__sdap_HeaderUL_present ? 1 : 0;
-    has_sdapDLheader = s->cnAssociation->choice.sdap_Config->sdap_HeaderDL == NR_SDAP_Config__sdap_HeaderDL_present ? 1 : 0;
-    has_sdap = has_sdapULheader | has_sdapDLheader;
+    if (is_gnb) {
+      has_sdap_rx = s->cnAssociation->choice.sdap_Config->sdap_HeaderUL == NR_SDAP_Config__sdap_HeaderUL_present;
+      has_sdap_tx = s->cnAssociation->choice.sdap_Config->sdap_HeaderDL == NR_SDAP_Config__sdap_HeaderDL_present;
+    } else {
+      has_sdap_tx = s->cnAssociation->choice.sdap_Config->sdap_HeaderUL == NR_SDAP_Config__sdap_HeaderUL_present;
+      has_sdap_rx = s->cnAssociation->choice.sdap_Config->sdap_HeaderDL == NR_SDAP_Config__sdap_HeaderDL_present;
+    }
     is_sdap_DefaultDRB = s->cnAssociation->choice.sdap_Config->defaultDRB == true ? 1 : 0;
     mappedQFIs2Add = (NR_QFI_t*)s->cnAssociation->choice.sdap_Config->mappedQoS_FlowsToAdd->list.array[0]; 
     mappedQFIs2AddCount = s->cnAssociation->choice.sdap_Config->mappedQoS_FlowsToAdd->list.count;
@@ -949,8 +952,8 @@ void add_drb_am(int is_gnb, ue_id_t rntiMaybeUEid, struct NR_DRB_ToAddMod *s, in
   if (ue->drb[drb_id-1] != NULL) {
     LOG_W(PDCP, "%s:%d:%s: warning DRB %d already exist for UE ID/RNTI %ld, do nothing\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rntiMaybeUEid);
   } else {
-    pdcp_drb = new_nr_pdcp_entity(NR_PDCP_DRB_AM, is_gnb, drb_id,pdusession_id,has_sdap,
-                                  has_sdapULheader,has_sdapDLheader,
+    pdcp_drb = new_nr_pdcp_entity(NR_PDCP_DRB_AM, is_gnb, drb_id, pdusession_id,
+                                  has_sdap_rx, has_sdap_tx,
                                   deliver_sdu_drb, ue, deliver_pdu_drb, ue,
                                   sn_size_dl, t_reordering, discard_timer,
                                   has_ciphering ? ciphering_algorithm : 0,
@@ -961,7 +964,7 @@ void add_drb_am(int is_gnb, ue_id_t rntiMaybeUEid, struct NR_DRB_ToAddMod *s, in
 
     LOG_D(PDCP, "%s:%d:%s: added drb %d to UE ID/RNTI %ld\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rntiMaybeUEid);
 
-    new_nr_sdap_entity(is_gnb, has_sdap, rntiMaybeUEid, pdusession_id, is_sdap_DefaultDRB, drb_id, mappedQFIs2Add, mappedQFIs2AddCount);
+    new_nr_sdap_entity(is_gnb, has_sdap_rx, has_sdap_tx, rntiMaybeUEid, pdusession_id, is_sdap_DefaultDRB, drb_id, mappedQFIs2Add, mappedQFIs2AddCount);
   }
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
@@ -1108,7 +1111,7 @@ void nr_DRB_preconfiguration(ue_id_t crntiMaybeUEid)
 
   nr_pdcp_add_drbs(ctxt.enb_flag, ctxt.rntiMaybeUEid, rbconfig->drb_ToAddModList, 0, NULL, NULL, Rlc_Bearer_ToAdd_list);
 
-  nr_rrc_rlc_config_asn1_req(&ctxt, (NR_SRB_ToAddModList_t *)NULL, rbconfig->drb_ToAddModList, NULL, (LTE_PMCH_InfoList_r9_t *)NULL, Rlc_Bearer_ToAdd_list);
+  nr_rrc_rlc_config_asn1_req (&ctxt,(NR_SRB_ToAddModList_t *) NULL, rbconfig->drb_ToAddModList, rbconfig->drb_ToReleaseList,  Rlc_Bearer_ToAdd_list);
 
   LOG_D(PDCP, "%s:%d: done RRC PDCP/RLC ASN1 request for UE ID/RNTI %ld\n", __FUNCTION__, __LINE__, ctxt.rntiMaybeUEid);
 }

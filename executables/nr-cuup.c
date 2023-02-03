@@ -93,12 +93,12 @@ void nr_rlc_bearer_init_ul_spec(struct NR_LogicalChannelConfig *mac_LogicalChann
   abort();
 }
 
-rlc_op_status_t nr_rrc_rlc_config_asn1_req(const protocol_ctxt_t *const ctxt_pP,
-                                           const NR_SRB_ToAddModList_t *const srb2add_listP,
-                                           const NR_DRB_ToAddModList_t *const drb2add_listP,
-                                           const NR_DRB_ToReleaseList_t *const drb2release_listP,
-                                           const LTE_PMCH_InfoList_r9_t *const pmch_InfoList_r9_pP,
-                                           struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list)
+rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
+    const NR_SRB_ToAddModList_t   * const srb2add_listP,
+    const NR_DRB_ToAddModList_t   * const drb2add_listP,
+    const NR_DRB_ToReleaseList_t  * const drb2release_listP,
+    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list)
+
 {
   abort();
   return 0;

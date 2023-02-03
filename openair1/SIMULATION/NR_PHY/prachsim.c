@@ -63,7 +63,6 @@ char *parallel_config = NULL;
 char *worker_config = NULL;
 
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
-rlc_info_t Rlc_info_um,Rlc_info_am_config;
 
 char *uecap_file;
 PHY_VARS_gNB *gNB;

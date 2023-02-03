@@ -315,7 +315,6 @@ static void apply_macrlc_config(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *const u
                              ue_context_pP->ue_context.SRB_configList,
                              ue_context_pP->ue_context.DRB_configList,
                              NULL,
-                             NULL,
                              get_softmodem_params()->sa ? cgc->rlc_BearerToAddModList : NULL);
 }
 
@@ -1192,7 +1191,6 @@ rrc_gNB_process_RRCReconfigurationComplete(
                                SRB_configList, // NULL,
                                DRB_configList,
                                DRB_Release_configList2,
-                               NULL,
                                get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
   }
 
@@ -1260,8 +1258,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                                 SRB_FLAG_NO,
                                 MBMS_FLAG_NO,
                                 CONFIG_ACTION_REMOVE,
-                                nr_DRB2LCHAN[i],
-                                Rlc_info_um);*/
+                                nr_DRB2LCHAN[i]);*/
           }
 
           ue_context_pP->ue_context.DRB_active[drb_id] = 0;

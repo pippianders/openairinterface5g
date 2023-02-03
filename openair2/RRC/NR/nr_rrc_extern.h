@@ -50,8 +50,8 @@ extern NR_LogicalChannelConfig_t NR_SRB3_logicalChannelConfig_defaultValue;
 extern int NB_UE_INST;
 extern void* bigphys_malloc(int);
 
-// CONSTANTS
-// uint8_t RACH_TIME_ALLOC;
+
+//uint8_t RACH_TIME_ALLOC;
 extern uint16_t RACH_FREQ_ALLOC;
 // uint8_t NB_RACH;
 extern MAC_MEAS_T BCCH_MEAS_TRIGGER,CCCH_MEAS_TRIGGER,DCCH_MEAS_TRIGGER,DTCH_MEAS_TRIGGER;

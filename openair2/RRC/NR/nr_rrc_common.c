@@ -56,7 +56,7 @@ void rrc_init_nr_srb_param(NR_LCHAN_DESC *chan)
   chan->transport_block_size = 4;
   chan->max_transport_blocks = 16;
   chan->Delay_class = 1;
-  return;
+  return ;
 }
 
 //-----------------------------------------------------------------------------
