@@ -678,7 +678,7 @@ typedef struct PHY_VARS_gNB_s {
   uint32_t ofdm_offset_divisor;
 
   int ldpc_offload_flag;
-
+  char ldpc_offload_version[4];
   int max_ldpc_iterations;
   /// indicate the channel estimation technique in time domain
   int chest_time;

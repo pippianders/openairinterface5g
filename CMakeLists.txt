@@ -606,6 +606,18 @@ if (ENABLE_LDPC_T1)
   set_target_properties(ldpc_t1 PROPERTIES COMPILE_FLAGS "-DALLOW_EXPERIMENTAL_API")
   target_compile_options(ldpc_t1 PRIVATE ${LIBDPDK_T1_CFLAGS})
   target_link_libraries(ldpc_t1 ${LIBDPDK_T1_LDFLAGS} ${T1})
+
+add_boolean_option(ENABLE_LDPC_T2 OFF "Build support for LDPC Offload to T2 library")
+if (ENABLE_LDPC_T2)
+  pkg_search_module(LIBDPDK_T2 REQUIRED libdpdk=20.11.3)
+  find_library(T2 NAMES rte_baseband_accl_ldpc REQUIRED)
+  if (NOT T2)
+    message(FATAL_ERROR "Library rte_baseband_accl_ldpc for T2 offload not found")
+  endif()
+  add_library(ldpc_t2 MODULE ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_offload.c)
+  set_target_properties(ldpc_t2 PROPERTIES COMPILE_FLAGS "-DALLOW_EXPERIMENTAL_API")
+  target_compile_options(ldpc_t2 PRIVATE ${LIBDPDK_T2_CFLAGS})
+  target_link_libraries(ldpc_t2 ${LIBDPDK_T2_LDFLAGS} ${T2})
 endif()
 
 ##########################################################
@@ -1008,7 +1020,7 @@ add_dependencies(ldpc_cl nrLDPC_decoder_kernels_CL)
 # Base CUDA setting
 ##############################################
 
-add_boolean_option(BUILD_CUDA False "Build support for CUDA")
+add_boolean_option(ENABLE_LDPC_CUDA OFF "Build support for CUDA")
 if (ENABLE_LDPC_CUDA)
   find_package(CUDA REQUIRED)
   SET(CUDA_NVCC_FLAG "${CUDA_NVCC_FLAGS};-arch=sm_60;")
@@ -2370,6 +2382,10 @@ if (ENABLE_LDPC_T1)
   add_dependencies(nr-softmodem ldpc_t1)
 endif()
 
+if (ENABLE_LDPC_T2)
+  add_dependencies(nr-softmodem ldpc_t2)
+endif()
+
 # force the generation of ASN.1 so that we don't need to wait during the build
 target_link_libraries(nr-softmodem PRIVATE
   asn1_lte_rrc asn1_nr_rrc asn1_s1ap asn1_ngap asn1_m2ap asn1_m3ap asn1_x2ap asn1_f1ap asn1_lpp)
@@ -2617,6 +2633,11 @@ add_executable(nr_ulsim
 if (ENABLE_LDPC_T1)
   add_dependencies(nr_ulsim ldpc_t1)
 endif()
+
+if (ENABLE_LDPC_T2)
+  add_dependencies(nr_ulsim ldpc_t2)
+endif()
+
 
 target_link_libraries(nr_ulsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON lte_rrc nr_rrc CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE x2ap SECU_CN ngap NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB -lz -Wl,--end-group
