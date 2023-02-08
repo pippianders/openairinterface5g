@@ -652,6 +652,7 @@ typedef struct {
   void *phy_sim_pdsch_rxdataF_comp;
   void *phy_sim_pdsch_dl_ch_estimates;
   void *phy_sim_pdsch_dl_ch_estimates_ext;
+  uint8_t *phy_sim_dlsch_b;
   notifiedFIFO_t phy_config_ind;
   notifiedFIFO_t *tx_resume_ind_fifo[NR_MAX_SLOTS_PER_FRAME];
   int tx_wait_for_dlsch[NR_MAX_SLOTS_PER_FRAME];
