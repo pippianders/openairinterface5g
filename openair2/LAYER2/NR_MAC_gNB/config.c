@@ -327,7 +327,9 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, int pusch_AntennaPorts, 
     cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences.value = compute_nr_root_seq(scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup,nb_preambles, frame_type, frequency_range);
     cfg->prach_config.num_prach_fd_occasions_list[i].num_root_sequences.tl.tag = NFAPI_NR_CONFIG_NUM_ROOT_SEQUENCES_TAG;
     cfg->num_tlv++;
-    cfg->prach_config.num_prach_fd_occasions_list[i].num_unused_root_sequences.value = 1;
+    cfg->prach_config.num_prach_fd_occasions_list[i].num_unused_root_sequences.tl.tag = NFAPI_NR_CONFIG_NUM_UNUSED_ROOT_SEQUENCES_TAG;
+    cfg->prach_config.num_prach_fd_occasions_list[i].num_unused_root_sequences.value = 0;
+    cfg->num_tlv++;
   }
 
   cfg->prach_config.ssb_per_rach.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present-1;
