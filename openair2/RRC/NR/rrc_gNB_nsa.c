@@ -41,7 +41,9 @@
 #include "executables/nr-softmodem.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
 #include <openair3/ocp-gtpu/gtp_itf.h>
-#include "UTIL/OSA/osa_defs.h"
+//#include "UTIL/OSA/osa_defs.h"
+#include "openair3/SECU/secu_defs.h"
+
 #include <openair2/RRC/NR/nr_rrc_proto.h>
 #include "pdcp.h"
 
@@ -223,10 +225,10 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
     LOG_I(RRC, "selecting integrity algorithm %d\n", ue_context_p->ue_context.integrity_algorithm);
 
     /* derive UP security key */
-    nr_derive_key_up_enc(ue_context_p->ue_context.ciphering_algorithm,
+    nr_derive_key_up_enc_osa(ue_context_p->ue_context.ciphering_algorithm,
                          ue_context_p->ue_context.kgnb,
                          &kUPenc);
-    nr_derive_key_up_int(ue_context_p->ue_context.integrity_algorithm,
+    nr_derive_key_up_int_osa(ue_context_p->ue_context.integrity_algorithm,
                          ue_context_p->ue_context.kgnb,
                          &kUPint);
 
