@@ -777,11 +777,11 @@ add_library(UTIL
 )
 
 set(SECU_OSA_SRC
-  ${OPENAIR2_DIR}/UTIL/OSA/osa_key_deriver.c
+  #${OPENAIR2_DIR}/UTIL/OSA/osa_key_deriver.c
   #  ${OPENAIR2_DIR}/UTIL/OSA/osa_rijndael.c
   #  ${OPENAIR2_DIR}/UTIL/OSA/osa_snow3g.c
   #  ${OPENAIR2_DIR}/UTIL/OSA/osa_stream_eea.c
-  ${OPENAIR2_DIR}/UTIL/OSA/osa_stream_eia.c
+  #${OPENAIR2_DIR}/UTIL/OSA/osa_stream_eia.c
     )
 add_library(SECU_OSA ${SECU_OSA_SRC} $<TARGET_OBJECTS:ds> )
 
@@ -1356,7 +1356,7 @@ set(NR_PDCP_SRC
   #these files should not be here, will be removed at some point when the
   #computation is done directly inside nr_pdcp_integrity_nia1.c instead
   #of reusing code of osa_stream_eia.c
-  ${OPENAIR2_DIR}/UTIL/OSA/osa_stream_eia.c
+  #${OPENAIR2_DIR}/UTIL/OSA/osa_stream_eia.c
   #  ${OPENAIR2_DIR}/UTIL/OSA/osa_snow3g.c
   #  ${OPENAIR2_DIR}/UTIL/OSA/osa_rijndael.c
   )
