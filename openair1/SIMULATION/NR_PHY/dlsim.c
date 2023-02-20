@@ -123,7 +123,7 @@ int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
 int nr_derive_key(int alg_type, uint8_t alg_id,
                const uint8_t key[32], uint8_t **out)
 {
-  return 0;
+  (void)alg_type;
 }
 
 void processSlotTX(void *arg) {}
