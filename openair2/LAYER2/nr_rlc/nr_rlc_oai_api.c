@@ -37,6 +37,7 @@
 #include "NR_RLC-Config.h"
 #include "common/ran_context.h"
 #include "NR_UL-CCCH-Message.h"
+#include "opt.h"
 
 #include "openair2/F1AP/f1ap_du_rrc_message_transfer.h"
 
@@ -124,6 +125,7 @@ void nr_drb_config(struct NR_RLC_Config *rlc_Config, NR_RLC_Config_PR rlc_config
       rlc_Config->choice.am->dl_AM_RLC.t_StatusProhibit = NR_T_StatusProhibit_ms15;
       break;
     default:
+      LOG_E (RLC, "Error in %s: RLC config type %d is not handled\n", __FUNCTION__, rlc_config_pr);
       AssertFatal(0, "RLC config type %d not handled\n", rlc_config_pr);
       break;
     }
@@ -157,6 +159,12 @@ void mac_rlc_data_ind     (
     T(T_ENB_RLC_MAC_UL, T_INT(module_idP), T_INT(rntiP),
       T_INT(channel_idP), T_INT(tb_sizeP));
 
+
+  // Trace UL RLC PDU Here
+  nr_rlc_pkt_info_t rlc_pkt;
+  rlc_pkt.direction = DIRECTION_UPLINK;
+  rlc_pkt.ueid      = rntiP;
+
   nr_rlc_manager_lock(nr_rlc_ue_manager);
   ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rntiP);
 
@@ -172,8 +180,12 @@ void mac_rlc_data_ind     (
 
   if (rb != NULL) {
 	LOG_D(RLC, "RB found! (channel ID %d) \n", channel_idP);
+
+    rlc_pkt.bearerType                    = -1; //To be filled
+    rlc_pkt.bearerId                      = -1; //To be filled
+
     rb->set_time(rb, nr_rlc_current_time);
-    rb->recv_pdu(rb, buffer_pP, tb_sizeP);
+    rb->recv_pdu(rb, buffer_pP, tb_sizeP, &rlc_pkt);
   } else {
     LOG_E(RLC, "%s:%d:%s: fatal: no RB found (channel ID %d)\n",
           __FILE__, __LINE__, __FUNCTION__, channel_idP);
@@ -202,6 +214,11 @@ tbs_size_t mac_rlc_data_req(
   nr_rlc_entity_t *rb;
   int maxsize;
 
+  // Trace UL RLC PDU Here
+  nr_rlc_pkt_info_t rlc_pkt;
+  rlc_pkt.direction = DIRECTION_DOWNLINK;
+  rlc_pkt.ueid      = rntiP;
+
   nr_rlc_manager_lock(nr_rlc_ue_manager);
   ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rntiP);
 
@@ -219,14 +236,43 @@ tbs_size_t mac_rlc_data_req(
     LOG_D(RLC, "MAC PDU to get created for channel_idP:%d \n", channel_idP);
     rb->set_time(rb, nr_rlc_current_time);
     maxsize = tb_sizeP;
-    ret = rb->generate_pdu(rb, buffer_pP, maxsize);
+    ret = rb->generate_pdu(rb, buffer_pP, maxsize, &rlc_pkt);
   } else {
     LOG_D(RLC, "MAC PDU failed to get created for channel_idP:%d \n", channel_idP);
     ret = 0;
   }
 
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
-
+  switch ((channel_idP)) {
+  case 0:
+	  rlc_pkt.bearerType = CHANNEL_TYPE_SRB;
+	  rlc_pkt.bearerId   = channel_idP - 1;
+	  break;
+  case 1 ... 3:
+	  rlc_pkt.bearerType = CHANNEL_TYPE_SRB;
+	  rlc_pkt.bearerId   = 0;
+	  break;
+  case 4 ... 32:
+	  rlc_pkt.bearerType = CHANNEL_TYPE_DRB;
+	  rlc_pkt.bearerId   = channel_idP - 4;
+	  break;
+  }
+  if (ret!=0) {
+	  char *rlcstr;
+	  switch (rlc_pkt.rlcMode)
+	  {
+		  case 1:
+			  rlcstr = "DL_RLC_TM_PDU";
+			  break;
+                  case 2:
+			  rlcstr = "DL_RLC_UM_PDU";
+			  break;
+		  case 4:
+			  rlcstr = "DL_RLC_AM_PDU";
+			  break;
+	  }
+	  LOG_RLC_P(OAILOG_INFO, rlcstr, -1, -1, rlc_pkt, (unsigned char *)buffer_pP, ret);
+  }
   if (enb_flagP)
     T(T_ENB_RLC_MAC_DL, T_INT(module_idP), T_INT(rntiP),
       T_INT(channel_idP), T_INT(ret));

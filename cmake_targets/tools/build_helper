@@ -656,17 +656,17 @@ check_install_oai_software() {
             LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
             ;;
         "ubuntu20.04")
-            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev python guile-2.0-dev"
+            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev python guile-2.0-dev liblttng-ust-dev"
             LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
             LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
             ;;
          "ubuntu21.04")
-            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev python guile-2.0-dev"
+            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev python guile-2.0-dev liblttng-ust-dev"
             LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
             LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
             ;;
          "ubuntu22.04")
-            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev python2 guile-2.2-dev"
+            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev python2 guile-2.2-dev liblttng-ust-dev"
             LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
             LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
             ;;
