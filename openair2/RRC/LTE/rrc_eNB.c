@@ -98,7 +98,9 @@
 #define ASN_MAX_ENCODE_SIZE 4096
 #define NUMBEROF_DRBS_TOBE_ADDED 1
 static int encode_CG_ConfigInfo(char *buffer,int buffer_size,rrc_eNB_ue_context_t *const ue_context_pP,int *enc_size);
-
+/** TODO TEMP FIX, Remove this and feed info structure */
+NRBearerTypeE lchannelType = Bearer_UNDEFINED_e;
+BCCHTransportType_e  bcchTransportType = NR_PLANE_UNDEFINED_E;
 extern RAN_CONTEXT_t RC;
 
 extern eNB_MAC_INST                *eNB_mac_inst;
@@ -462,6 +464,8 @@ init_SI(
 
   if (NODE_IS_MONOLITHIC(rrc->node_type)) {
     LOG_D(RRC, "About to call rrc_mac_config_req_eNB for ngran_eNB\n");
+    lchannelType = Bearer_BCCH_BCH_e;
+    bcchTransportType = bch_TRANSPORT;
     rrc_mac_config_req_eNB_t tmp = {
         .CC_id = CC_id,
         .physCellId = carrier->physCellId,
@@ -973,7 +977,7 @@ void release_UE_in_freeList(module_id_t mod_id) {
     rnti_t rnti = eNB_MAC->UE_free_ctrl[ue_num].rnti;
     if (rnti == 0)
       continue;
-      protocol_ctxt_t  ctxt;
+    protocol_ctxt_t  ctxt;
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, mod_id, ENB_FLAG_YES, rnti, 0, 0, mod_id);
 
       for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
@@ -1143,6 +1147,8 @@ rrc_eNB_generate_SecurityModeCommand(
 
   if (!NODE_IS_DU(RC.rrc[ctxt_pP->module_id]->node_type)) {
     LOG_I(RRC,"calling rrc_data_req :securityModeCommand\n");
+    lchannelType = Bearer_DCCH_e;
+    bcchTransportType = dlsch_TRANSPORT;
     rrc_data_req(ctxt_pP,
                  DCCH,
                  rrc_eNB_mui++,
@@ -1183,6 +1189,8 @@ rrc_eNB_generate_UECapabilityEnquiry(
         size,
         rrc_eNB_mui,
         DCCH);
+  lchannelType = Bearer_DCCH_e;
+  bcchTransportType = dlsch_TRANSPORT;
   rrc_data_req(
     ctxt_pP,
     DCCH,
@@ -1868,6 +1876,8 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
     LOG_D(RRC,
           "[FRAME %05d][RRC_eNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
           ctxt_pP->frame, ctxt_pP->module_id, size, ue_context_pP->ue_context.rnti, rrc_eNB_mui, ctxt_pP->module_id, DCCH);
+    lchannelType = Bearer_DCCH_e;
+    bcchTransportType = dlsch_TRANSPORT;
     rrc_data_req(
       ctxt_pP,
       DCCH,
@@ -2012,6 +2022,8 @@ rrc_eNB_generate_RRCConnectionRelease(
     F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container_length = size;
     itti_send_msg_to_task(TASK_CU_F1, ctxt_pP->module_id, m);
   } else {
+    lchannelType = Bearer_DCCH_e;
+    bcchTransportType = dlsch_TRANSPORT;
     rrc_data_req(ctxt_pP,
                  DCCH,
                  rrc_eNB_mui++,
@@ -2258,6 +2270,8 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t *co
   LOG_D(RRC,
         "[FRAME %05d][RRC_eNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
         ctxt_pP->frame, ctxt_pP->module_id, size, ue_context_pP->ue_context.rnti, rrc_eNB_mui, ctxt_pP->module_id, DCCH);
+  lchannelType = Bearer_DCCH_e;
+  bcchTransportType = dlsch_TRANSPORT;
   rrc_data_req(
     ctxt_pP,
     DCCH,
@@ -2496,6 +2510,8 @@ rrc_eNB_modify_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t *cons
   LOG_D(RRC,
         "[FRAME %05d][RRC_eNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
         ctxt_pP->frame, ctxt_pP->module_id, size, ue_context_pP->ue_context.rnti, rrc_eNB_mui, ctxt_pP->module_id, DCCH);
+  lchannelType = Bearer_DCCH_e;
+  bcchTransportType = dlsch_TRANSPORT;
   rrc_data_req(
     ctxt_pP,
     DCCH,
@@ -3299,6 +3315,8 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
         rrc_eNB_mui,
         ctxt_pP->module_id,
         DCCH);
+  lchannelType = Bearer_DCCH_e;
+  bcchTransportType = dlsch_TRANSPORT;
   rrc_data_req(ctxt_pP,
                DCCH,
                rrc_eNB_mui++,
@@ -3392,6 +3410,8 @@ rrc_eNB_generate_RRCConnectionReconfiguration_SCell(
                                         );
   LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate LTE_RRCConnectionReconfiguration (bytes %d, UE id %x)\n",
         ctxt_pP->module_id,ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
+  lchannelType = Bearer_DCCH_e;
+  bcchTransportType = dlsch_TRANSPORT;
   rrc_data_req(
     ctxt_pP,
     DCCH,
@@ -5851,6 +5871,7 @@ rrc_eNB_decode_ccch(
           PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
     return -1;
   }
+  //LOG_P(OAILOG_DEBUG, "UL CCCH:", buffer, buffer_length);
 
   if (ul_ccch_msg->message.present == LTE_UL_CCCH_MessageType_PR_c1) {
     switch (ul_ccch_msg->message.choice.c1.present) {
@@ -6589,6 +6610,7 @@ rrc_eNB_decode_dcch(
 
     LOG_T(RRC, "\n");
   }
+  //LOG_P(OAILOG_DEBUG, "UL DCCH:", Rx_sdu, sdu_sizeP);
 
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
     LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Failed to decode UL-DCCH (%zu bytes)\n",
@@ -7108,6 +7130,7 @@ rrc_eNB_decode_dcch(
         if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
           xer_fprint(stdout, &asn_DEF_LTE_UE_EUTRA_Capability, ue_context_p->ue_context.UE_Capability);
         }
+        //LOG_P(OAILOG_DEBUG, "UE_EUTRA_Capability:", ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[eutra_index]->ueCapabilityRAT_Container.buf, ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[eutra_index]->ueCapabilityRAT_Container.size);
 
         if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
           LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Failed to decode UE capabilities (%zu bytes)\n",
@@ -8256,7 +8279,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
         else
           failure_cause = "UE not in handover";
 
-          LOG_W(RRC, "[eNB %ld] cannot process (%s) X2 HANDOVER CANCEL for rnti %x, cause %s, ignoring\n", instance, failure_cause, X2AP_HANDOVER_CANCEL(msg_p).rnti, cause);
+        LOG_W(RRC, "[eNB %ld] cannot process (%s) X2 HANDOVER CANCEL for rnti %x, cause %s, ignoring\n", instance, failure_cause, X2AP_HANDOVER_CANCEL(msg_p).rnti, cause);
       }
 
       break;

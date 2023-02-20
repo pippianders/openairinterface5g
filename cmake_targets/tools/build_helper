@@ -578,19 +578,19 @@ check_install_oai_software() {
     $SUDO apt install -y software-properties-common
     case "$(get_distribution_release)" in
         "ubuntu18.04")
-            specific_packages="libgcrypt11-dev guile-2.0-dev"
+            specific_packages="libgcrypt11-dev guile-2.0-dev liblttng-ust-dev"
             ;;
         "ubuntu20.04")
-            specific_packages="guile-2.0-dev"
+            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev python guile-2.0-dev liblttng-ust-dev"
             ;;
          "ubuntu21.04")
-            specific_packages="guile-2.0-dev"
+            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev python guile-2.0-dev liblttng-ust-dev"
             ;;
          "ubuntu22.04")
-            specific_packages="guile-2.2-dev"
+            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev python guile-2.0-dev liblttng-ust-dev"
             ;;
          "debian11")
-            specific_packages="guile-2.2-dev libz-dev"
+            specific_packages="guile-2.2-dev libz-dev liblttng-ust-dev"
             ;;
     esac
     $SUDO apt-get install -y \

@@ -778,6 +778,7 @@ include_directories(${OPENAIR_DIR}/common/utils/hashtable)
 
 add_library(UTIL
   ${OPENAIR_DIR}/common/utils/LOG/log.c
+  ${OPENAIR_DIR}/common/utils/LOG/ss-tp.c
   ${OPENAIR_DIR}/common/utils/LOG/vcd_signal_dumper.c
   ${OPENAIR2_DIR}/UTIL/MATH/oml.c
   ${OPENAIR2_DIR}/UTIL/OPT/probe.c
@@ -2219,6 +2220,7 @@ target_link_libraries(lte-softmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYP
 target_link_libraries(lte-softmodem PRIVATE ${LIB_LMS_LIBRARIES})
 target_link_libraries(lte-softmodem PRIVATE ${T_LIB})
 target_link_libraries(lte-softmodem PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(lte-softmodem PRIVATE lttng-ust)
 
 
 add_executable(ocp-enb
@@ -2319,6 +2321,7 @@ target_link_libraries(lte-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CR
 target_link_libraries(lte-uesoftmodem PRIVATE ${LIB_LMS_LIBRARIES})
 target_link_libraries(lte-uesoftmodem PRIVATE ${T_LIB})
 target_link_libraries(lte-uesoftmodem PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(lte-uesoftmodem PRIVATE lttng-ust)
 
 # force the generation of ASN.1 so that we don't need to wait during the build
 target_link_libraries(lte-uesoftmodem PRIVATE
@@ -2358,6 +2361,7 @@ target_link_libraries(nr-softmodem PRIVATE
   x2ap f1ap m2ap m3ap e1ap
   -Wl,--end-group z dl)
 
+target_link_libraries(nr-softmodem PRIVATE lttng-ust)
 target_link_libraries(nr-softmodem PRIVATE ${LIBXML2_LIBRARIES})
 target_link_libraries(nr-softmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${CMAKE_DL_LIBS} ${ATLAS_LIBRARIES})
 target_link_libraries(nr-softmodem PRIVATE ${LIB_LMS_LIBRARIES})
@@ -2388,10 +2392,15 @@ add_executable(nr-cuup
   )
 
 target_link_libraries(nr-cuup PRIVATE
+	-Wl,--start-group
+	UTIL
+	-Wl,--end-group z dl)
+target_link_libraries(nr-cuup PRIVATE
                       CONFIG_LIB ITTI SCTP_CLIENT
                       GTPV1U e1ap e1_pdcp_if f1ap
                       SECU_OSA SECU_CN ${OPENSSL_LIBRARIES} crypt z sctp dl pthread)
 target_link_libraries(nr-cuup PRIVATE asn1_lte_rrc asn1_nr_rrc)
+target_link_libraries(nr-cuup PRIVATE lttng-ust)
                       
 # nr-uesoftmodem is  UE implementation
 #######################################
@@ -2429,6 +2438,7 @@ target_link_libraries(nr-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRY
 target_link_libraries(nr-uesoftmodem PRIVATE ${LIB_LMS_LIBRARIES})
 target_link_libraries(nr-uesoftmodem PRIVATE ${T_LIB})
 target_link_libraries(nr-uesoftmodem PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(nr-uesoftmodem PRIVATE lttng-ust)
 
 add_dependencies( nr-uesoftmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
 if (ENABLE_LDPC_CUDA)
