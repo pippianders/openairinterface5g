@@ -82,8 +82,6 @@
 #include "OCG.h"
 #include "OCG_extern.h"
 
-//#include "UTIL/OSA/osa_defs.h"
-
 #include "rrc_eNB_S1AP.h"
 #include "rrc_eNB_GTPV1U.h"
 #include "rrc_eNB_M2AP.h"
