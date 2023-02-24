@@ -5,8 +5,8 @@ set -uo pipefail
 PREFIX=/opt/oai-lte-ue
 
 # Based another env var, pick one template to use
-if [[ -v USE_NFAPI ]]; then cp $PREFIX/etc/ue.nfapi.conf $PREFIX/etc/ue.conf; fi
-
+if [[ -v USE_NFAPI ]]; then cp $PREFIX/etc/mounted.conf $PREFIX/etc/ue.conf; fi
+if [[ -v USE_VOLUMED_CONF ]]; then cp $PREFIX/etc/mounted.conf $PREFIX/etc/ue.conf; fi
 # Only this template will be manipulated and the USIM one!
 CONFIG_FILES=`ls $PREFIX/etc/ue.conf $PREFIX/etc/ue_usim.conf || true`
 
@@ -30,7 +30,6 @@ for c in ${CONFIG_FILES}; do
 
     # render template and inline replace config file
     sed -i "${EXPRESSIONS}" ${c}
-
     echo "=================================="
     echo "== Configuration file: ${c}"
     cat ${c}
