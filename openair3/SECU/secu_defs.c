@@ -32,7 +32,9 @@
 
 void stream_compute_integrity(eia_alg_id_e alg , nas_stream_cipher_t *stream_cipher, uint8_t out[4])
 {
-  if (alg == EIA1_128_ALG_ID) {
+  if(alg == EIA0_ALG_ID){
+    LOG_E(OSA, "Provided integrity algorithm is currently not supported = %u\n", alg);
+  } else if (alg == EIA1_128_ALG_ID) {
     LOG_D(OSA, "EIA1 algorithm applied for integrity\n");
     nas_stream_encrypt_eia1(stream_cipher, out);
   } else if (alg == EIA2_128_ALG_ID) {
@@ -40,14 +42,16 @@ void stream_compute_integrity(eia_alg_id_e alg , nas_stream_cipher_t *stream_cip
     nas_stream_encrypt_eia2(stream_cipher, out);
   } else {
     LOG_E(OSA, "Provided integrity algorithm is currently not supported = %u\n", alg);
-    DevAssert("Unknown Algorithm type");
+    DevAssert(0!=0 && "Unknown Algorithm type");
   }
 
 }
 
 void stream_compute_encrypt(eea_alg_id_e alg, nas_stream_cipher_t *stream_cipher, uint8_t *out)
 {
-  if (alg == EEA1_128_ALG_ID) {
+  if(alg == EEA0_ALG_ID ){
+    LOG_E(OSA, "Provided integrity algorithm is currently not supported = %u\n", alg);
+  } else if (alg == EEA1_128_ALG_ID) {
     LOG_D(OSA, "EEA1 algorithm applied for integrity\n");
     nas_stream_encrypt_eea1(stream_cipher, out);
   } else if (alg == EEA2_128_ALG_ID) {
@@ -55,7 +59,7 @@ void stream_compute_encrypt(eea_alg_id_e alg, nas_stream_cipher_t *stream_cipher
     nas_stream_encrypt_eea2(stream_cipher, out);
   } else {
     LOG_E(OSA, "Provided encrypt algorithm is currently not supported = %u\n", alg);
-    DevAssert("Unknown Algorithm type");
+    DevAssert(0!=0 && "Unknown Algorithm type");
   }
 
 }

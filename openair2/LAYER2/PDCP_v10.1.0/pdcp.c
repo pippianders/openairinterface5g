@@ -2094,10 +2094,10 @@ pdcp_config_set_security(
           PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
           pdcp_pP->cipheringAlgorithm,
           pdcp_pP->integrityProtAlgorithm);
-    
-    memcpy(pdcp_pP->kRRCenc, kRRCenc, 16);
-    memcpy(pdcp_pP->kRRCint, kRRCint, 16);
-    memcpy(pdcp_pP->kUPenc, kUPenc, 16);
+   
+    kRRCenc != NULL ? memcpy(pdcp_pP->kRRCenc, kRRCenc, 16) : memset(pdcp_pP->kRRCenc, 0, 16);
+    kRRCint != NULL ? memcpy(pdcp_pP->kRRCint, kRRCint, 16) : memset(pdcp_pP->kRRCint, 0, 16);
+    kUPenc != NULL ? memcpy(pdcp_pP->kUPenc, kUPenc , 16) : memset(pdcp_pP->kUPenc, 0, 16);
 
     /* Activate security */
     pdcp_pP->security_activated = 1;
