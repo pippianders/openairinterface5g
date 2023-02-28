@@ -32,13 +32,13 @@ WORKDIR /oai-ran
 COPY . .
 
 #only install address sanitizer for this container, the others don't need it
-RUN yum install -y libasan
+RUN yum install -y libasan libubsan
 
 #run build_oai to build the target image
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai --phy_simulators --ninja --verbose-ci --sanitize-address --noavx512 -c
+    ./build_oai --phy_simulators --ninja --verbose-ci --sanitize --noavx512 -c
 
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi8/ubi:latest as oai-physim
