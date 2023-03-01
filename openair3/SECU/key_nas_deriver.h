@@ -29,25 +29,5 @@ void nr_derive_key(algorithm_type_dist_t alg_type, uint8_t alg_id,
 
 void nr_derive_key_ng_ran_star(uint16_t pci, uint64_t nr_arfcn_dl, const uint8_t key[32], uint8_t *key_ng_ran_star);
 
-/*
-#define derive_key_nas_enc(aLGiD, kASME, kNAS)  \
-    derive_key_nas(NAS_ENC_ALG, aLGiD, kASME, kNAS)
-
-#define derive_key_nas_int(aLGiD, kASME, kNAS)  \
-    derive_key_nas(NAS_INT_ALG, aLGiD, kASME, kNAS)
-
-#define derive_key_rrc_enc(aLGiD, kASME, kNAS)  \
-    derive_key_nas(RRC_ENC_ALG, aLGiD, kASME, kNAS)
-
-#define derive_key_rrc_int(aLGiD, kASME, kNAS)  \
-    derive_key_nas(RRC_INT_ALG, aLGiD, kASME, kNAS)
-
-#define derive_key_up_enc(aLGiD, kASME, kNAS)  \
-    derive_key_nas(UP_ENC_ALG, aLGiD, kASME, kNAS)
-
-#define derive_key_up_int(aLGiD, kASME, kNAS)  \
-    derive_key_nas(UP_INT_ALG, aLGiD, kASME, kNAS)
-*/
-
 #endif
 

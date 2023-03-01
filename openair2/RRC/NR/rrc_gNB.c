@@ -92,6 +92,7 @@
 #include "executables/softmodem-common.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
 #include <openair2/X2AP/x2ap_eNB.h>
+#include <openair3/SECU/key_nas_deriver.h>
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include <openair2/RRC/NR/nr_rrc_proto.h>
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
@@ -1209,10 +1210,10 @@ rrc_gNB_process_RRCReconfigurationComplete(
 )
 {
   int                                 drb_id;
-  uint8_t                            *kRRCenc = NULL;
-  uint8_t                            *kRRCint = NULL;
-  uint8_t                            *kUPenc = NULL;
-  uint8_t                            *kUPint = NULL;
+  uint8_t                            kRRCenc[16] = {0};
+  uint8_t                            kRRCint[16] = {0};
+  uint8_t                            kUPenc[16] = {0};
+  uint8_t                            kUPint[16] = {0};
   NR_DRB_ToAddModList_t              *DRB_configList = ue_context_pP->ue_context.DRB_configList2[xid];
   NR_SRB_ToAddModList_t              *SRB_configList = ue_context_pP->ue_context.SRB_configList2[xid];
   NR_DRB_ToReleaseList_t             *DRB_Release_configList2 = ue_context_pP->ue_context.DRB_Release_configList2[xid];
@@ -1223,21 +1224,22 @@ rrc_gNB_process_RRCReconfigurationComplete(
 
   /* Derive the keys from kgnb */
   if (DRB_configList != NULL) {
-    nr_derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
+    nr_derive_key(UP_ENC_ALG ,ue_context_pP->ue_context.ciphering_algorithm,
                          ue_context_pP->ue_context.kgnb,
-                         &kUPenc);
-    nr_derive_key_up_int(ue_context_pP->ue_context.integrity_algorithm,
+                         kUPenc);
+    nr_derive_key(UP_INT_ALG, ue_context_pP->ue_context.integrity_algorithm,
                          ue_context_pP->ue_context.kgnb,
-                         &kUPint);
+                         kUPint);
   }
 
-  nr_derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm,
+  nr_derive_key(RRC_ENC_ALG, ue_context_pP->ue_context.ciphering_algorithm,
                         ue_context_pP->ue_context.kgnb,
-                        &kRRCenc);
-  nr_derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
+                        kRRCenc);
+  nr_derive_key(RRC_INT_ALG, ue_context_pP->ue_context.integrity_algorithm,
                         ue_context_pP->ue_context.kgnb,
-                        &kRRCint);
+                        kRRCint);
   /* Refresh SRBs/DRBs */
+
 
   LOG_D(NR_RRC, "Configuring PDCP DRBs/SRBs for UE %04x\n", ue_context_pP->ue_context.rnti);
 
@@ -1425,16 +1427,16 @@ void rrc_gNB_generate_RRCReestablishment(const protocol_ctxt_t *ctxt_pP,
   }
 #endif
 
-  uint8_t *kRRCenc = NULL;
-  uint8_t *kRRCint = NULL;
-  uint8_t *kUPenc = NULL;
+  uint8_t kRRCenc[16] = {0};
+  uint8_t kRRCint[16] = {0};
+  uint8_t kUPenc[16] = {0};
   /* Derive the keys from kgnb */
   if (SRB_configList != NULL) {
-    nr_derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm, ue_context_pP->ue_context.kgnb, &kUPenc);
+    nr_derive_key(UP_ENC_ALG, ue_context_pP->ue_context.ciphering_algorithm, ue_context_pP->ue_context.kgnb, kUPenc);
   }
 
-  nr_derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm, ue_context_pP->ue_context.kgnb, &kRRCenc);
-  nr_derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm, ue_context_pP->ue_context.kgnb, &kRRCint);
+  nr_derive_key(RRC_ENC_ALG, ue_context_pP->ue_context.ciphering_algorithm, ue_context_pP->ue_context.kgnb, kRRCenc);
+  nr_derive_key(RRC_INT_ALG, ue_context_pP->ue_context.integrity_algorithm, ue_context_pP->ue_context.kgnb, kRRCint);
 
   /* Configure SRB1 for UE */
   if (*SRB_configList != NULL) {
