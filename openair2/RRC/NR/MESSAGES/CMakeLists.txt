@@ -9,7 +9,7 @@ else()
 endif()
 
 add_custom_command(OUTPUT ${nr_rrc_source} ${nr_rrc_headers}
-  COMMAND ASN1C_PREFIX=NR_ asn1c -pdu=all -fcompound-names -gen-UPER -no-gen-BER -no-gen-JER -no-gen-OER -no-gen-APER -no-gen-example -findirect-choice -D ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${NR_RRC_GRAMMAR}
+  COMMAND ASN1C_PREFIX=NR_ ${CMAKE_BINARY_DIR}/new_asn1c/bin/asn1c -pdu=all -fcompound-names -gen-UPER -no-gen-BER -no-gen-JER -no-gen-OER -no-gen-APER -no-gen-example -findirect-choice -D ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${NR_RRC_GRAMMAR}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${NR_RRC_GRAMMAR}
   COMMENT "Generating NR RRC source file from ${CMAKE_CURRENT_SOURCE_DIR}/${NR_RRC_GRAMMAR}"
 )
@@ -23,7 +23,7 @@ add_custom_command(OUTPUT ${nr_rrc_source} ${nr_rrc_headers}
 # recommended way, see https://gitlab.kitware.com/cmake/cmake/-/issues/17366.
 # In newer cmake version (e.g., 3.20), it is also possible to have
 # ${nr_rrc_headers} directly in the add_library(asn1_nr_rrc_hdrs) statement,
-# without the need for asn1_lte_rrc_hdrs
+# without the need for asn1_nr_rrc_hdrs
 add_custom_target(gen_nr_rrc_hdrs DEPENDS ${nr_rrc_headers})
 add_library(asn1_nr_rrc_hdrs INTERFACE)
 add_dependencies(asn1_nr_rrc_hdrs gen_nr_rrc_hdrs)
