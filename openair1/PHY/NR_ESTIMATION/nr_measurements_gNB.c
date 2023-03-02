@@ -210,9 +210,7 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
 // Todo:
 // - averaging IIR filter for RX power and noise
 void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq_pid, unsigned char symbol, uint8_t nrOfLayers){
-
   int rx_power_tot[NUMBER_OF_NR_ULSCH_MAX];
-  int rx_power[NUMBER_OF_NR_ULSCH_MAX][NB_ANTENNAS_RX];
   unsigned short rx_power_avg_dB[NUMBER_OF_NR_ULSCH_MAX];
   unsigned short rx_power_tot_dB[NUMBER_OF_NR_ULSCH_MAX];
 
@@ -222,7 +220,7 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
   NR_DL_FRAME_PARMS      *fp = &gNB->frame_parms;
   int              ch_offset = fp->ofdm_symbol_size * symbol;
   int                N_RB_UL = gNB->ulsch[ulsch_id]->harq_processes[harq_pid]->ulsch_pdu.rb_size;
-
+  int rx_power[NUMBER_OF_NR_ULSCH_MAX][fp->nb_antennas_rx];
   rx_power_tot[ulsch_id] = 0;
 
   for (int aarx = 0; aarx < fp->nb_antennas_rx; aarx++){
