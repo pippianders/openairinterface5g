@@ -40,7 +40,7 @@
  * @param[out] out For EIA2 the output string is 32 bits long
  */
 
-void nas_stream_encrypt_eia2(nas_stream_cipher_t *stream_cipher, uint8_t out[4])
+void nas_stream_encrypt_eia2(nas_stream_cipher_t const*stream_cipher, uint8_t out[4])
 {
   DevAssert(stream_cipher != NULL);
   DevAssert(stream_cipher->message != NULL);

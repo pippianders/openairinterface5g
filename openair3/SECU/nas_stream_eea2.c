@@ -30,7 +30,7 @@
 #include "conversions.h"
 #include "nas_stream_eea2.h"
 
-void nas_stream_encrypt_eea2(nas_stream_cipher_t *stream_cipher, uint8_t *out)
+void nas_stream_encrypt_eea2(nas_stream_cipher_t const* stream_cipher, uint8_t *out)
 {
   DevAssert(stream_cipher != NULL);
   DevAssert(stream_cipher->key != NULL);

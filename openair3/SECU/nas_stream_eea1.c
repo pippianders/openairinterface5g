@@ -30,7 +30,7 @@
 #include "snow3g.h"
 
 
-void nas_stream_encrypt_eea1(nas_stream_cipher_t *stream_cipher, uint8_t *out)
+void nas_stream_encrypt_eea1(nas_stream_cipher_t const* stream_cipher, uint8_t *out)
 {
   snow_3g_context_t snow_3g_context;
   int       n ;

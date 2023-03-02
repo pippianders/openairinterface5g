@@ -116,7 +116,7 @@ uint32_t mask32bit(int n)
  * @param[in] stream_cipher Structure containing various variables to setup encoding
  * @param[out] out For EIA1 the output string is 32 bits long
  */
-void nas_stream_encrypt_eia1(nas_stream_cipher_t *stream_cipher, uint8_t out[4])
+void nas_stream_encrypt_eia1(nas_stream_cipher_t const* stream_cipher, uint8_t out[4])
 {
   snow_3g_context_t snow_3g_context;
   uint32_t        K[4],IV[4], z[5];

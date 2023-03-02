@@ -785,6 +785,7 @@ set(SECURITY_SRC
   ${OPENAIR3_DIR}/SECU/rijndael.c
   ${OPENAIR3_DIR}/SECU/snow3g.c
   ${OPENAIR3_DIR}/SECU/key_nas_deriver.c
+  ${OPENAIR3_DIR}/SECU/nas_stream_eea0.c
   ${OPENAIR3_DIR}/SECU/nas_stream_eea1.c
   ${OPENAIR3_DIR}/SECU/nas_stream_eia1.c
   ${OPENAIR3_DIR}/SECU/nas_stream_eea2.c

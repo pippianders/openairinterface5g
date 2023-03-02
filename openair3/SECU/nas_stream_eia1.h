@@ -25,7 +25,7 @@
 
 #include "secu_defs.h"
 
-void nas_stream_encrypt_eia1(nas_stream_cipher_t *stream_cipher, uint8_t out[4]);
+void nas_stream_encrypt_eia1(nas_stream_cipher_t const* stream_cipher, uint8_t out[4]);
 
 #endif
 

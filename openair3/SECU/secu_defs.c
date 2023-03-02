@@ -24,13 +24,14 @@
 #include "common/utils/assertions.h"
 #include "common/utils/LOG/log.h"
 
+#include "nas_stream_eea0.h"
 #include "nas_stream_eea1.h"
 #include "nas_stream_eea2.h"
 
 #include "nas_stream_eia1.h"
 #include "nas_stream_eia2.h"
 
-void stream_compute_integrity(eia_alg_id_e alg , nas_stream_cipher_t *stream_cipher, uint8_t out[4])
+void stream_compute_integrity(eia_alg_id_e alg , nas_stream_cipher_t const* stream_cipher, uint8_t out[4])
 {
   if(alg == EIA0_ALG_ID){
     LOG_E(OSA, "Provided integrity algorithm is currently not supported = %u\n", alg);
@@ -47,15 +48,16 @@ void stream_compute_integrity(eia_alg_id_e alg , nas_stream_cipher_t *stream_cip
 
 }
 
-void stream_compute_encrypt(eea_alg_id_e alg, nas_stream_cipher_t *stream_cipher, uint8_t *out)
+void stream_compute_encrypt(eea_alg_id_e alg, nas_stream_cipher_t const* stream_cipher, uint8_t *out)
 {
   if(alg == EEA0_ALG_ID ){
-    LOG_E(OSA, "Provided integrity algorithm is currently not supported = %u\n", alg);
+    LOG_D(OSA, "EEA0 algorithm applied for encryption\n");
+    nas_stream_encrypt_eea0(stream_cipher, out);
   } else if (alg == EEA1_128_ALG_ID) {
-    LOG_D(OSA, "EEA1 algorithm applied for integrity\n");
+    LOG_D(OSA, "EEA1 algorithm applied for encryption\n");
     nas_stream_encrypt_eea1(stream_cipher, out);
   } else if (alg == EEA2_128_ALG_ID) {
-    LOG_D(OSA, "EEA2 algorithm applied for integrity\n");
+    LOG_D(OSA, "EEA2 algorithm applied for  encryption\n");
     nas_stream_encrypt_eea2(stream_cipher, out);
   } else {
     LOG_E(OSA, "Provided encrypt algorithm is currently not supported = %u\n", alg);

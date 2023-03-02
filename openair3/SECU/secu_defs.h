@@ -58,7 +58,7 @@ typedef enum{
   END_EIA0_ALG_ID, 
 } eia_alg_id_e ;
 
-void stream_compute_integrity(eia_alg_id_e alg, nas_stream_cipher_t *stream_cipher, uint8_t out[4]);
+void stream_compute_integrity(eia_alg_id_e alg, nas_stream_cipher_t const* stream_cipher, uint8_t out[4]);
 
 
 typedef enum{
@@ -69,6 +69,6 @@ typedef enum{
   END_EEA_ALG_ID 
 } eea_alg_id_e ;
 
-void stream_compute_encrypt(eea_alg_id_e alg, nas_stream_cipher_t *stream_cipher, uint8_t *out);
+void stream_compute_encrypt(eea_alg_id_e alg, nas_stream_cipher_t const* stream_cipher, uint8_t *out);
 
 #endif /* SECU_DEFS_H_ */

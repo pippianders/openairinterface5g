@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -20,12 +19,17 @@
  *      contact@openairinterface.org
  */
 
-#ifndef OAI_NAS_STREAM_EEA2_H
-#define OAI_NAS_STREAM_EEA2_H
+
+#ifndef OAI_NAS_STREAM_EEA0_H
+#define OAI_NAS_STREAM_EEA0_H
 
 #include "secu_defs.h"
 
-void nas_stream_encrypt_eea2(nas_stream_cipher_t const* stream_cipher, uint8_t *out);
+#include <stdlib.h>
+#include <stdint.h>
+
+void nas_stream_encrypt_eea0(nas_stream_cipher_t const* stream_cipher, uint8_t *out);
 
 #endif
+
 
