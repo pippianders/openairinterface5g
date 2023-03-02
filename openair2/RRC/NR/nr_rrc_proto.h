@@ -134,7 +134,7 @@ void nr_rrc_trigger(protocol_ctxt_t *ctxt, int CC_id, int frame, int subframe);
    \ *ptrsMcs Pointer to L_ptrs MCS related parameters
    \ *epre_Ratio Pointer to ep_ratio
    \ *reOffset Pointer to RE Offset Value */
-void rrc_config_dl_ptrs_params(NR_BWP_Downlink_t *bwp, int *ptrsNrb, int *ptrsMcs, int *epre_Ratio, int * reOffset);
+void rrc_config_dl_ptrs_params(NR_BWP_Downlink_t *bwp, long *ptrsNrb, long *ptrsMcs, long *epre_Ratio, long *reOffset);
 
 uint8_t
 nr_rrc_data_req(
