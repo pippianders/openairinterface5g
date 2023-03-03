@@ -1246,8 +1246,8 @@ rrc_ue_process_radioResourceConfigDedicated(
   // Establish SRBs if present
   // loop through SRBToAddModList
   if (radioResourceConfigDedicated->srb_ToAddModList) {
-    uint8_t kRRCenc[16] = {0};
-    uint8_t kRRCint[16] = {0};
+    uint8_t kRRCenc[32] = {0};
+    uint8_t kRRCint[32] = {0};
     derive_key_nas(RRC_ENC_ALG,
                        UE_rrc_inst[ctxt_pP->module_id].ciphering_algorithm,
                        UE_rrc_inst[ctxt_pP->module_id].kenb, kRRCenc);
@@ -1552,9 +1552,9 @@ rrc_ue_process_securityModeCommand(
     ul_dcch_msg.message.choice.c1.present = LTE_UL_DCCH_MessageType__c1_PR_securityModeFailure;
   }
 
-  uint8_t kRRCenc[16] = {0};
-  uint8_t kUPenc[16] = {0};
-  uint8_t kRRCint[16] = {0};
+  uint8_t kRRCenc[32] = {0};
+  uint8_t kUPenc[32] = {0};
+  uint8_t kRRCint[32] = {0};
   pdcp_t *pdcp_p = NULL;
   hash_key_t key = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t h_rc;

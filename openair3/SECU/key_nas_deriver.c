@@ -63,7 +63,7 @@
 
 
 static
-void derive_key_common(algorithm_type_dist_t alg_type, uint8_t alg_id, const uint8_t kasme[32], uint8_t FC, uint8_t knas[16])
+void derive_key_common(algorithm_type_dist_t alg_type, uint8_t alg_id, const uint8_t kasme[32], uint8_t FC, uint8_t out[32])
 {
 
   uint8_t s[7];
@@ -100,10 +100,7 @@ void derive_key_common(algorithm_type_dist_t alg_type, uint8_t alg_id, const uin
 #endif
 
   byte_array_t data = {.len = 7, .buf = s};
-  uint8_t out[32] = {0};
   kdf(kasme, data, 32, out);
-
-  memcpy(knas, &out[31-16+1], 16);
 }
 
 
@@ -120,14 +117,18 @@ void derive_key_common(algorithm_type_dist_t alg_type, uint8_t alg_id, const uin
  * @param[in] kasme Key for MME as provided by AUC
  * @param[out] knas Pointer to reference where output of KDF will be stored.
  */
-void derive_key_nas(algorithm_type_dist_t alg_type, uint8_t alg_id, const uint8_t kasme[32], uint8_t knas[16])
+void derive_key_nas(algorithm_type_dist_t alg_type, uint8_t alg_id, const uint8_t kasme[32], uint8_t knas[32])
 {
   derive_key_common(alg_type, alg_id, kasme, FC_ALG_KEY_DER, knas);
 }
 
 void nr_derive_key(algorithm_type_dist_t alg_type, uint8_t alg_id, const uint8_t key[32], uint8_t out[16])
 {
-  derive_key_common(alg_type, alg_id, key, NR_FC_ALG_KEY_DER, out);
+  uint8_t tmp[32] = {0};
+  derive_key_common(alg_type, alg_id, key, NR_FC_ALG_KEY_DER, tmp); 
+ 
+  // Only the last 16 bytes are needed in 5G
+  memcpy(out, &tmp[16], 16);
 }
 
 

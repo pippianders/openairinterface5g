@@ -5210,9 +5210,9 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   int                                 drb_id;
   int                                 oip_ifup = 0;
   int                                 dest_ip_offset = 0;
-  uint8_t                            kRRCenc[16] = {0};
-  uint8_t                            kRRCint[16] = {0};
-  uint8_t                            kUPenc[16] = {0};
+  uint8_t                            kRRCenc[32] = {0};
+  uint8_t                            kRRCint[32] = {0};
+  uint8_t                            kUPenc[32] = {0};
   LTE_DRB_ToAddModList_t             *DRB_configList = ue_context_pP->ue_context.DRB_configList2[xid];
   LTE_SRB_ToAddModList_t             *SRB_configList = ue_context_pP->ue_context.SRB_configList2[xid];
   LTE_DRB_ToReleaseList_t            *DRB_Release_configList2 = ue_context_pP->ue_context.DRB_Release_configList2[xid];
