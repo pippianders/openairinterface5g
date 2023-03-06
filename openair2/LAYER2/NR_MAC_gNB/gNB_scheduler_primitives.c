@@ -2880,30 +2880,19 @@ void UL_tti_req_ahead_initialization(gNB_MAC_INST * gNB, NR_ServingCellConfigCom
   }
 }
 
-void send_initial_ul_rrc_message(module_id_t        module_id,
-                                 int                CC_id,
-                                 int                rnti,
-                                 int                uid,
-                                 const uint8_t      *sdu,
-                                 sdu_size_t         sdu_len) {
+void send_initial_ul_rrc_message(module_id_t module_id, int rnti, const uint8_t *sdu, sdu_size_t sdu_len, void* rawUE)
+{
   const gNB_MAC_INST *mac = RC.nrmac[module_id];
   LOG_W(MAC,
         "[RAPROC] Received SDU for CCCH length %d for UE %04x\n",
         sdu_len, rnti);
 
-  /* TODO REMOVE_DU_RRC: the RRC in the DU is a hack and should be taken out in the future */
-  if (NODE_IS_DU(RC.nrrrc[module_id]->node_type))
-    rrc_gNB_create_ue_context(rnti, RC.nrrrc[module_id], rnti);
-
-  const NR_ServingCellConfigCommon_t *scc = RC.nrrrc[module_id]->carrier.servingcellconfigcommon;
-  const NR_ServingCellConfig_t *sccd = RC.nrrrc[module_id]->configuration.scd;
-  NR_CellGroupConfig_t cellGroupConfig = {0};
-  fill_initial_cellGroupConfig(uid, &cellGroupConfig, scc, sccd, &RC.nrrrc[module_id]->configuration);
+  NR_UE_info_t* UE = (NR_UE_info_t*) rawUE;
 
   uint8_t du2cu_rrc_container[1024];
   asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
                                                   NULL,
-                                                  &cellGroupConfig,
+                                                  UE->CellGroup,
                                                   du2cu_rrc_container,
                                                   sizeof(du2cu_rrc_container));
   AssertFatal(enc_rval.encoded > 0,
@@ -2920,4 +2909,43 @@ void send_initial_ul_rrc_message(module_id_t        module_id,
     .du2cu_rrc_container_length = (enc_rval.encoded + 7) / 8
   };
   mac->mac_rrc.initial_ul_rrc_message_transfer(module_id, &ul_rrc_msg);
+}
+
+void prepare_initial_ul_rrc_message(module_id_t module_id, NR_UE_info_t* UE)
+{
+  /* create this UE's initial CellGroup */
+  const NR_ServingCellConfigCommon_t *scc = RC.nrrrc[module_id]->carrier.servingcellconfigcommon;
+  const NR_ServingCellConfig_t *sccd = RC.nrrrc[module_id]->configuration.scd;
+  NR_CellGroupConfig_t *cellGroupConfig = calloc(1, sizeof(*cellGroupConfig));
+  AssertFatal(cellGroupConfig != NULL, "out of memory\n");
+  fill_initial_cellGroupConfig(UE->uid, cellGroupConfig, scc, sccd, &RC.nrrrc[module_id]->configuration);
+
+  uint8_t du2cu_rrc_container[1024];
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
+                                                  NULL,
+                                                  cellGroupConfig,
+                                                  du2cu_rrc_container,
+                                                  sizeof(du2cu_rrc_container));
+  AssertFatal(enc_rval.encoded > 0,
+              "Could not encode cellGroupConfig for UE %04x, failed element %s\n",
+              UE->rnti,
+              enc_rval.failed_type->name);
+
+  UE->CellGroup = cellGroupConfig;
+  nr_mac_update_cellgroup(RC.nrmac[module_id], UE->rnti, cellGroupConfig);
+
+  /* TODO REMOVE_DU_RRC: the RRC in the DU is a hack and should be taken out in the future */
+  if (NODE_IS_DU(RC.nrrrc[module_id]->node_type)) {
+    rrc_gNB_ue_context_t *ue = rrc_gNB_create_ue_context(UE->rnti, RC.nrrrc[module_id], UE->rnti);
+    ue->ue_context.masterCellGroup = cellGroupConfig;
+  }
+
+  /* activate SRB0 */
+  nr_rlc_activate_srb0(UE->rnti, module_id, UE, send_initial_ul_rrc_message);
+
+  /* the cellGroup sent to CU specifies there is SRB1, so create it */
+  DevAssert(cellGroupConfig->rlc_BearerToAddModList->list.count == 1);
+  const NR_RLC_BearerConfig_t *bearer = cellGroupConfig->rlc_BearerToAddModList->list.array[0];
+  DevAssert(bearer->servedRadioBearer->choice.srb_Identity == 1);
+  nr_rlc_add_srb(UE->rnti, DCCH, bearer);
 }
