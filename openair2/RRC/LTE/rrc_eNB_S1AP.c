@@ -487,9 +487,9 @@ rrc_pdcp_config_security(
 //------------------------------------------------------------------------------
 {
   LTE_SRB_ToAddModList_t             *SRB_configList = ue_context_pP->ue_context.SRB_configList;
-  uint8_t                            kRRCenc[16] = {0};
-  uint8_t                            kRRCint[16] = {0} ;
-  uint8_t                            kUPenc[16] = {0};
+  uint8_t                            kRRCenc[32] = {0};
+  uint8_t                            kRRCint[32] = {0} ;
+  uint8_t                            kUPenc[32] = {0};
   pdcp_t                             *pdcp_p   = NULL;
   static int                          print_keys= 1;
   hashtable_rc_t                      h_rc;
@@ -517,8 +517,8 @@ rrc_pdcp_config_security(
     if (print_keys ==1 ) {
       print_keys =0;
       LOG_DUMPMSG(RRC, DEBUG_SECURITY, ue_context_pP->ue_context.kenb, 32,"\nKeNB:" );
-      LOG_DUMPMSG(RRC, DEBUG_SECURITY, kRRCenc, 16,"\nKRRCenc:" );
-      LOG_DUMPMSG(RRC, DEBUG_SECURITY, kRRCint, 16,"\nKRRCint:" );
+      LOG_DUMPMSG(RRC, DEBUG_SECURITY, kRRCenc, 32,"\nKRRCenc:" );
+      LOG_DUMPMSG(RRC, DEBUG_SECURITY, kRRCint, 32,"\nKRRCint:" );
     }
   }
 
@@ -954,10 +954,12 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
       &ctxt,
       ue_context_p,
       &S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p).security_capabilities);
+
     process_eNB_security_key (
       &ctxt,
       ue_context_p,
       S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p).security_key);
+
     {
       uint8_t send_security_mode_command = true;
       rrc_pdcp_config_security(
