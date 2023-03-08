@@ -696,7 +696,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
   return 0;
 }
 
-static void send_slot_ind(notifiedFIFO_t *nf, int slot) {
+void send_slot_ind(notifiedFIFO_t *nf, int slot) {
   if (nf) {
     notifiedFIFO_elt_t *newElt = newNotifiedFIFO_elt(sizeof(int), 0, NULL, NULL);
     int *msgData = (int *) NotifiedFifoData(newElt);
@@ -750,7 +750,8 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   // exit dlsch procedures as there are no active dlsch
   if (is_cw0_active != ACTIVE && is_cw1_active != ACTIVE) {
     // don't wait anymore
-    send_slot_ind(ue->tx_resume_ind_fifo[(proc->nr_slot_rx + dlsch[0].dlsch_config.k1_feedback) % ue->frame_parms.slots_per_frame], proc->nr_slot_rx);
+    const int ack_nack_slot = (proc->nr_slot_rx + dlsch[0].dlsch_config.k1_feedback) % ue->frame_parms.slots_per_frame;
+    send_slot_ind(ue->tx_resume_ind_fifo[ack_nack_slot], proc->nr_slot_rx);
     return false;
   }
 
@@ -869,7 +870,8 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     ue->if_inst->dl_indication(&dl_indication, ul_time_alignment);
   }
   // DLSCH decoding finished! don't wait anymore
-  send_slot_ind(ue->tx_resume_ind_fifo[(proc->nr_slot_rx + dlsch[0].dlsch_config.k1_feedback) % ue->frame_parms.slots_per_frame], proc->nr_slot_rx);
+  const int ack_nack_slot = (proc->nr_slot_rx + dlsch[0].dlsch_config.k1_feedback) % ue->frame_parms.slots_per_frame;
+  send_slot_ind(ue->tx_resume_ind_fifo[ack_nack_slot], proc->nr_slot_rx);
 
   if (ue->mac_enabled == 1) { // TODO: move this from PHY to MAC layer!
 
@@ -1003,7 +1005,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   return dec;
 }
 
-int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
+void pbch_pdcch_processing(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            nr_phy_data_t *phy_data) {
 
@@ -1182,43 +1184,43 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     }
     dci_cnt = dci_cnt + nr_ue_pdcch_procedures(ue, proc, pdcch_est_size, pdcch_dl_ch_estimates, phy_data, n_ss, rxdataF);
   }
+  LOG_D(PHY,"[UE %d] Frame %d, nr_slot_rx %d: found %d DCIs\n", ue->Mod_id, frame_rx, nr_slot_rx, dci_cnt);
   phy_pdcch_config->nb_search_space = 0;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDCCH, VCD_FUNCTION_OUT);
+}
+
+void pdsch_processing(PHY_VARS_NR_UE *ue,
+                      UE_nr_rxtx_proc_t *proc,
+                      nr_phy_data_t *phy_data) {
+
+  int frame_rx = proc->frame_rx;
+  int nr_slot_rx = proc->nr_slot_rx;
+  int gNB_id = proc->gNB_id;
 
   NR_UE_DLSCH_t *dlsch = &phy_data->dlsch[0];
-  if (dci_cnt > 0) {
-
-    LOG_D(PHY,"[UE %d] Frame %d, nr_slot_rx %d: found %d DCIs\n", ue->Mod_id, frame_rx, nr_slot_rx, dci_cnt);
-
-    if (dlsch->active) {
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDSCH, VCD_FUNCTION_IN);
-      uint16_t nb_symb_sch = dlsch[0].dlsch_config.number_symbols;
-      uint16_t start_symb_sch = dlsch[0].dlsch_config.start_symbol;
-
-      LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
-      //to update from pdsch config
-
-      for (uint16_t m=start_symb_sch;m<(nb_symb_sch+start_symb_sch) ; m++){
-        nr_slot_fep(ue,
-                    proc,
-                    m,  //to be updated from higher layer
-                    rxdataF);
-      }
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDSCH, VCD_FUNCTION_OUT);
-    }
-  } else {
-    LOG_D(PHY,"[UE %d] Frame %d, nr_slot_rx %d: No DCIs found\n", ue->Mod_id, frame_rx, nr_slot_rx);
-  }
-
 #endif //NR_PDCCH_SCHED
-
   start_meas(&ue->generic_stat);
   // do procedures for C-RNTI
   int ret_pdsch = 0;
+
+  const uint32_t rxdataF_sz = ue->frame_parms.samples_per_slot_wCP;
+  __attribute__ ((aligned(32))) c16_t rxdataF[ue->frame_parms.nb_antennas_rx][rxdataF_sz];
   if (dlsch[0].active) {
 
-    // send indication to tx thread to wait for DLSCH decoding
-    send_slot_ind(ue->tx_wait_ind_fifo[(proc->nr_slot_rx + dlsch[0].dlsch_config.k1_feedback) % ue->frame_parms.slots_per_frame], proc->nr_slot_rx);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDSCH, VCD_FUNCTION_IN);
+    uint16_t nb_symb_sch = dlsch[0].dlsch_config.number_symbols;
+    uint16_t start_symb_sch = dlsch[0].dlsch_config.start_symbol;
+
+    LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
+    //to update from pdsch config
+
+    for (uint16_t m=start_symb_sch;m<(nb_symb_sch+start_symb_sch) ; m++){
+      nr_slot_fep(ue,
+                  proc,
+                  m,  //to be updated from higher layer
+                  rxdataF);
+    }
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDSCH, VCD_FUNCTION_OUT);
 
     uint8_t nb_re_dmrs;
     if (dlsch[0].dlsch_config.dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
@@ -1352,7 +1354,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   LOG_D(PHY," ****** end RX-Chain  for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_slot_rx);
   UEscopeCopy(ue, commonRxdataF, rxdataF, sizeof(int32_t), ue->frame_parms.nb_antennas_rx, rxdataF_sz);
-  return (0);
 }
 
 

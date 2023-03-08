@@ -1131,9 +1131,12 @@ int main(int argc, char **argv)
         nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
         nr_ue_scheduled_response(&scheduled_response);
 
-        phy_procedures_nrUE_RX(UE,
-                               &UE_proc,
-                               &phy_data);
+        pbch_pdcch_processing(UE,
+                              &UE_proc,
+                              &phy_data);
+        pdsch_processing(UE,
+                         &UE_proc,
+                         &phy_data);
         
         //----------------------------------------------------------
         //---------------------- count errors ----------------------

@@ -565,20 +565,12 @@ void processSlotTX(void *arg) {
   LOG_D(PHY,"%d.%d => slot type %d\n", proc->frame_tx, proc->nr_slot_tx, proc->tx_slot_type);
   if (proc->tx_slot_type == NR_UPLINK_SLOT || proc->tx_slot_type == NR_MIXED_SLOT){
 
-    // find how many slots to wait for
-    int num_wait_slots = 0;
-    while(true) {
-      notifiedFIFO_elt_t *res = pollNotifiedFIFO(UE->tx_wait_ind_fifo[proc->nr_slot_tx]);
-      if (res == NULL) break;
-      num_wait_slots++;
-      delNotifiedFIFO_elt(res);
-    }
-
-    // then wait for rx slots to send indication
-    for(int i=0; i < num_wait_slots; i++) {
+    // wait for rx slots to send indication
+    for(int i=0; i < UE->tx_wait_for_dlsch[proc->nr_slot_tx]; i++) {
       notifiedFIFO_elt_t *res = pullNotifiedFIFO(UE->tx_resume_ind_fifo[proc->nr_slot_tx]);
       delNotifiedFIFO_elt(res);
     }
+    UE->tx_wait_for_dlsch[proc->nr_slot_tx] = 0;
 
     // trigger L2 to run ue_scheduler thru IF module
     // [TODO] mapping right after NR initial sync
@@ -606,11 +598,8 @@ void processSlotTX(void *arg) {
   RU_write(rxtxD);
 }
 
-void UE_processing(void *arg) {
+nr_phy_data_t UE_dl_preprocessing(PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 
-  nr_rxtx_thread_data_t *rxtxD = (nr_rxtx_thread_data_t *) arg;
-  UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
-  PHY_VARS_NR_UE    *UE   = rxtxD->UE;
   nr_phy_data_t phy_data = {0};
 
   if (IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa) {
@@ -632,7 +621,13 @@ void UE_processing(void *arg) {
     }
 
     uint64_t a=rdtsc_oai();
-    phy_procedures_nrUE_RX(UE, proc, &phy_data);
+    pbch_pdcch_processing(UE, proc, &phy_data);
+    if (phy_data.dlsch[0].active) {
+      // indicate to tx thread to wait for DLSCH decoding
+      const int ack_nack_slot = (proc->nr_slot_rx + phy_data.dlsch[0].dlsch_config.k1_feedback) % UE->frame_parms.slots_per_frame;
+      UE->tx_wait_for_dlsch[ack_nack_slot]++;
+    }
+
     LOG_D(PHY, "In %s: slot %d, time %llu\n", __FUNCTION__, proc->nr_slot_rx, (rdtsc_oai()-a)/3500);
 
     if(IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa){
@@ -644,6 +639,16 @@ void UE_processing(void *arg) {
   }
 
   ue_ta_procedures(UE, proc->nr_slot_tx, proc->frame_tx);
+  return phy_data;
+}
+
+void UE_dl_processing(void *arg) {
+  nr_rxtx_thread_data_t *rxtxD = (nr_rxtx_thread_data_t *) arg;
+  UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
+  PHY_VARS_NR_UE    *UE   = rxtxD->UE;
+  nr_phy_data_t *phy_data = &rxtxD->phy_data;
+
+  pdsch_processing(UE, proc, phy_data);
 }
 
 void dummyWrite(PHY_VARS_NR_UE *UE,openair0_timestamp timestamp, int writeBlockSize) {
@@ -787,9 +792,7 @@ void *UE_thread(void *arg) {
 
   int num_ind_fifo = nb_slot_frame;
   for(int i=0; i < num_ind_fifo; i++) {
-    UE->tx_wait_ind_fifo[i] = malloc(sizeof(*UE->tx_wait_ind_fifo[i]));
     UE->tx_resume_ind_fifo[i] = malloc(sizeof(*UE->tx_resume_ind_fifo[i]));
-    initNotifiedFIFO(UE->tx_wait_ind_fifo[i]);
     initNotifiedFIFO(UE->tx_resume_ind_fifo[i]);
   }
 
@@ -959,10 +962,12 @@ void *UE_thread(void *arg) {
     pushTpool(&(get_nrUE_params()->Tpool), newElt);
 
     // RX slot processing. We launch and forget.
-    newElt = newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), curMsg.proc.nr_slot_rx, NULL, UE_processing);
+    nr_phy_data_t phy_data = UE_dl_preprocessing(UE, &curMsg.proc);
+    newElt = newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), curMsg.proc.nr_slot_rx, NULL, UE_dl_processing);
     nr_rxtx_thread_data_t *curMsgRx = (nr_rxtx_thread_data_t *) NotifiedFifoData(newElt);
     curMsgRx->proc = curMsg.proc;
     curMsgRx->UE = UE;
+    curMsgRx->phy_data = phy_data;
     pushTpool(&(get_nrUE_params()->Tpool), newElt);
 
     if (curMsg.proc.decoded_frame_rx != -1)
