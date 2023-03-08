@@ -51,11 +51,8 @@
 /* RRC */
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_CellGroupConfig.h"
-#include "NR_ServingCellConfigCommon.h"
-#include "NR_MeasConfig.h"
 
 /* PHY */
-#include "PHY/defs_gNB.h"
 #include "time_meas.h"
 
 /* Interface */
@@ -64,8 +61,6 @@
 #include "mac_rrc_ul.h"
 
 /* MAC */
-#include "LAYER2/MAC/mac.h"
-#include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "NR_TAG.h"
@@ -80,8 +75,10 @@
 /*!\brief Maximum number of random access process */
 #define NR_NB_RA_PROC_MAX 4
 #define MAX_NUM_OF_SSB 64
-
+#define MAX_NUM_NR_PRACH_PREAMBLES 64
 #define MIN_NUM_PRBS_TO_SCHEDULE  5
+
+extern const uint8_t nr_rv_round_map[4];
 
 /*! \brief NR_list_t is a "list" (of users, HARQ processes, slices, ...).
  * Especially useful in the scheduler and to keep "classes" of users. */
@@ -337,12 +334,6 @@ typedef struct NR_sched_pucch {
   int start_symb;
 } NR_sched_pucch_t;
 
-typedef struct NR_tda_info {
-  mappingType_t mapping_type;
-  int startSymbolIndex;
-  int nrOfSymbols;
-} NR_tda_info_t;
-
 typedef struct NR_pusch_dmrs {
   uint8_t N_PRB_DMRS;
   uint8_t num_dmrs_symb;
@@ -586,7 +577,7 @@ typedef struct {
   struct CSI_Report CSI_report;
   bool SR;
   /// information about every HARQ process
-  NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
+  NR_UE_harq_t harq_processes[NR_MAX_HARQ_PROCESSES];
   /// HARQ processes that are free
   NR_list_t available_dl_harq;
   /// HARQ processes that await feedback
@@ -594,7 +585,7 @@ typedef struct {
   /// HARQ processes that await retransmission
   NR_list_t retrans_dl_harq;
   /// information about every UL HARQ process
-  NR_UE_ul_harq_t ul_harq_processes[NR_MAX_NB_HARQ_PROCESSES];
+  NR_UE_ul_harq_t ul_harq_processes[NR_MAX_HARQ_PROCESSES];
   /// UL HARQ processes that are free
   NR_list_t available_ul_harq;
   /// UL HARQ processes that await feedback
@@ -671,8 +662,6 @@ typedef struct {
   bool Msg3_dcch_dtch;
   bool Msg4_ACKed;
   uint32_t ra_timer;
-  /// Sched CSI-RS: scheduling decisions
-  NR_gNB_UCI_STATS_t uci_statS;
   float ul_thr_ue;
   float dl_thr_ue;
 } NR_UE_info_t;
@@ -744,6 +733,8 @@ typedef struct gNB_MAC_INST_s {
   /// NFAPI UL TTI Request Structure for future TTIs, dynamically allocated
   /// because length depends on number of slots
   nfapi_nr_ul_tti_request_t        *UL_tti_req_ahead[NFAPI_CC_MAX];
+  int UL_tti_req_ahead_size;
+  int vrb_map_UL_size;
   /// NFAPI HI/DCI0 Config Request Structure
   nfapi_nr_ul_dci_request_t         UL_dci_req[NFAPI_CC_MAX];
   /// NFAPI DL PDU structure

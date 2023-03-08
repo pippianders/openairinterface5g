@@ -102,6 +102,8 @@ int config_sync_var=-1;
 instance_t CUuniqInstance=0;
 instance_t DUuniqInstance=0;
 
+int get_node_type() {return -1;}
+
 RAN_CONTEXT_t RC;
 int oai_exit = 0;
 
@@ -519,6 +521,10 @@ int main( int argc, char **argv ) {
     pthread_mutex_init(&ue_pf_po_mutex, NULL);
     memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
     set_latency_target();
+
+    if(IS_SOFTMODEM_DOSCOPE_QT) {
+      load_softscope("nrqt",PHY_vars_UE_g[0][0]);
+    }
 
     if(IS_SOFTMODEM_DOSCOPE) {
       load_softscope("nr",PHY_vars_UE_g[0][0]);

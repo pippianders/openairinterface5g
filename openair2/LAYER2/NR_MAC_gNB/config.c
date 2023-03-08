@@ -42,6 +42,7 @@
 
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "SCHED_NR/phy_frame_config_nr.h"
+#include "openair1/PHY/defs_gNB.h"
 
 #include "NR_MIB.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
@@ -473,9 +474,11 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   if (scc != NULL ) {
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
 
-    const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-    RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL =
-        calloc(n * MAX_BWP_SIZE, sizeof(uint16_t));
+    int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+    if (*scc->ssbSubcarrierSpacing == 0)
+      n <<= 1; // to have enough room for feedback possibly beyond the frame we need a larger array at 15kHz SCS
+    RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL = calloc(n * MAX_BWP_SIZE, sizeof(uint16_t));
+    RC.nrmac[Mod_idP]->vrb_map_UL_size = n;
     AssertFatal(RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL,
                 "could not allocate memory for RC.nrmac[]->common_channels[0].vrb_map_UL\n");
 

@@ -81,8 +81,6 @@ const char *__asan_default_options()
   return "detect_leaks=0";
 }
 
-LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
-
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
@@ -100,20 +98,9 @@ nfapi_ue_release_request_body_t release_rntis;
 //Fixme: Uniq dirty DU instance, by global var, datamodel need better management
 instance_t DUuniqInstance=0;
 instance_t CUuniqInstance=0;
-teid_t newGtpuCreateTunnel(instance_t instance,
-                           ue_id_t ue_id,
-                           int incoming_bearer_id,
-                           int outgoing_bearer_id,
-                           teid_t outgoing_teid,
-                           int qfi,
-                           transport_layer_addr_t remoteAddr,
-                           int port,
-                           gtpCallback callBack,
-                           gtpCallbackSDAP callBackSDAP) {
-  return 0;
-}
 
-int newGtpuDeleteAllTunnels(instance_t instance, ue_id_t ue_id) {
+int nr_derive_key_ng_ran_star(uint16_t pci, uint64_t nr_arfcn_dl, const uint8_t key[32], uint8_t *key_ng_ran_star)
+{
   return 0;
 }
 
@@ -156,59 +143,6 @@ rrc_data_ind(
   const uint8_t   *const       buffer_pP
 )
 {
-}
-
-int
-gtpv1u_create_s1u_tunnel(
-  const instance_t                              instanceP,
-  const gtpv1u_enb_create_tunnel_req_t *const  create_tunnel_req_pP,
-  gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP
-) {
-  return 0;
-}
-
-int
-rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-  const protocol_ctxt_t *const ctxt_pP,
-  const gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP,
-  uint8_t                         *inde_list
-) {
-  return 0;
-}
-
-int
-gtpv1u_create_ngu_tunnel(
-  const instance_t instanceP,
-  const gtpv1u_gnb_create_tunnel_req_t *  const create_tunnel_req_pP,
-        gtpv1u_gnb_create_tunnel_resp_t * const create_tunnel_resp_pP){
-  return 0;
-}
-
-int
-gtpv1u_update_ngu_tunnel(
-  const instance_t                              instanceP,
-  const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req_pP,
-  const ue_id_t                                 prior_ue_id
-){
-  return 0;
-}
-
-int gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
-  return 0;
-}
-
-int gtpv1u_delete_ngu_tunnel( const instance_t instance,
-			      gtpv1u_gnb_delete_tunnel_req_t *req) {
-  return 0;
-}
-
-int
-nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-  const protocol_ctxt_t *const ctxt_pP,
-  const gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP,
-  uint8_t                         *inde_list
-){
-  return 0;
 }
 
 int nr_derive_key(int alg_type, uint8_t alg_id,
@@ -322,9 +256,10 @@ void nr_dlsim_preprocessor(module_id_t module_id,
    * configuration */
   current_BWP->mcsTableIdx = g_mcsTableIdx;
   sched_pdsch->time_domain_allocation = get_dl_tda(RC.nrmac[module_id], scc, slot);
-  AssertFatal(sched_pdsch->time_domain_allocation>=0,"Unable to find PDSCH time domain allocation in list\n");
+  AssertFatal(sched_pdsch->time_domain_allocation >= 0,"Unable to find PDSCH time domain allocation in list\n");
 
-  sched_pdsch->tda_info = nr_get_pdsch_tda_info(current_BWP, sched_pdsch->time_domain_allocation);
+  sched_pdsch->tda_info = get_dl_tda_info(current_BWP, sched_ctrl->search_space->searchSpaceType->present, sched_pdsch->time_domain_allocation,
+                                          NR_MIB__dmrs_TypeA_Position_pos2, 1, NR_RNTI_C, sched_ctrl->coreset->controlResourceSetId, false);
 
   sched_pdsch->dmrs_parms = get_dl_dmrs_params(scc,
                                                current_BWP,
@@ -375,6 +310,7 @@ int NB_UE_INST = 1;
 
 int main(int argc, char **argv)
 {
+  setbuf(stdout, NULL);
   char c;
   int i,aa;//,l;
   double sigma2, sigma2_dB=10, SNR, snr0=-2.0, snr1=2.0;
@@ -1285,9 +1221,11 @@ int main(int argc, char **argv)
         uint8_t  nb_symb_sch = rel15->NrOfSymbols;
 
         available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, rel15->nrOfLayers);
-        if(pdu_bit_map & 0x1) {
-          available_bits-= (ptrsSymbPerSlot * ptrsRePerSymb *rel15->nrOfLayers* 2);
-          printf("[DLSIM][PTRS] Available bits are: %5u, removed PTRS bits are: %5u \n",available_bits, (ptrsSymbPerSlot * ptrsRePerSymb *rel15->nrOfLayers* 2) );
+        if (pdu_bit_map & 0x1) {
+          available_bits -= (ptrsSymbPerSlot * ptrsRePerSymb * rel15->nrOfLayers * 2);
+          if (trial == 0 && round == 0) {
+            printf("[DLSIM][PTRS] Available bits are: %5u, removed PTRS bits are: %5u \n", available_bits, (ptrsSymbPerSlot * ptrsRePerSymb * rel15->nrOfLayers * 2));
+          }
         }
 
         for (i = 0; i < available_bits; i++) {

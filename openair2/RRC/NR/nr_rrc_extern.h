@@ -32,9 +32,7 @@
 #define __OPENAIR_NR_RRC_EXTERN_H__
 #include "nr_rrc_defs.h"
 #include "COMMON/mac_rrc_primitives.h"
-#include "LAYER2/MAC/mac.h"
 #include "LAYER2/RLC/rlc.h"
-#include "openair2/RRC/LTE/rrc_defs.h"
 #include "openair2/RRC/common.h"
 
 #define NR_MAX_SIB_LENGTH 2976 // 3GPP TS 38.331 section 5.2.1 - The physical layer imposes a limit to the maximum size a SIB can take. The maximum SIB1 or SI message size is 2976 bits.
@@ -53,8 +51,7 @@ extern void* bigphys_malloc(int);
 
 //uint8_t RACH_TIME_ALLOC;
 extern uint16_t RACH_FREQ_ALLOC;
-//uint8_t NB_RACH;
-extern LCHAN_DESC BCCH_LCHAN_DESC,CCCH_LCHAN_DESC,DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
+// uint8_t NB_RACH;
 extern MAC_MEAS_T BCCH_MEAS_TRIGGER,CCCH_MEAS_TRIGGER,DCCH_MEAS_TRIGGER,DTCH_MEAS_TRIGGER;
 extern MAC_AVG_T BCCH_MEAS_AVG,CCCH_MEAS_AVG,DCCH_MEAS_AVG, DTCH_MEAS_AVG;
 
@@ -62,9 +59,4 @@ extern UE_PF_PO_t UE_PF_PO[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
 
 extern pthread_mutex_t ue_pf_po_mutex;
 
-extern uint16_t reestablish_rnti_map[MAX_MOBILES_PER_ENB][2];
-char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigurationReq *configuration);
-
 #endif
-
-
