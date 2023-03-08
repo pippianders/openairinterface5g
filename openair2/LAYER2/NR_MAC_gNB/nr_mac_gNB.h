@@ -800,6 +800,8 @@ typedef struct gNB_MAC_INST_s {
   uint8_t min_grant_prb;
   uint8_t min_grant_mcs;
 
+  int precoding_matrix_size[NR_MAX_NB_LAYERS];
+
   nr_mac_rrc_ul_if_t mac_rrc;
 
   int16_t frame;

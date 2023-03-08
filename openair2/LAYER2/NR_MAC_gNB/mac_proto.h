@@ -38,10 +38,7 @@ void set_cset_offset(uint16_t);
 
 void mac_top_init_gNB(ngran_node_t node_type);
 
-void config_common(int Mod_idP,
-                   int pdsch_AntennaPorts,
-                   int pusch_AntennaPorts,
-                   NR_ServingCellConfigCommon_t *scc);
+void config_common(int Mod_idP, rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc);
 
 int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP,
                                           rnti_t rnti,
@@ -430,7 +427,8 @@ NR_pdsch_dmrs_t get_dl_dmrs_params(const NR_ServingCellConfigCommon_t *scc,
                                    const NR_tda_info_t *tda_info,
                                    const int Layers);
 
-uint16_t get_pm_index(const NR_UE_info_t *UE,
+uint16_t get_pm_index(const gNB_MAC_INST *nrmac,
+                      const NR_UE_info_t *UE,
                       int layers,
                       int xp_pdsch_antenna_ports);
 
