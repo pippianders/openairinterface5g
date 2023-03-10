@@ -94,9 +94,9 @@ nfapi_ue_release_request_body_t release_rntis;
 instance_t DUuniqInstance=0;
 instance_t CUuniqInstance=0;
 
-int nr_derive_key_ng_ran_star(uint16_t pci, uint64_t nr_arfcn_dl, const uint8_t key[32], uint8_t *key_ng_ran_star)
+void nr_derive_key_ng_ran_star(uint16_t pci, uint64_t nr_arfcn_dl, const uint8_t key[32], uint8_t *key_ng_ran_star)
 {
-  return 0;
+
 }
 
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
