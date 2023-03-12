@@ -61,6 +61,26 @@ enum UEdataType {
   UEdataTypeNumberOfItems
 };
 
+enum PlotTypeGnbIf {
+  empty,
+  waterFall,
+  CIR,
+  puschLLR,
+  puschIQ,
+  puschSNR,
+  puschBLER,
+  puschMCS,
+  puschRETX,
+  puschThroughput,
+  pdschSNR,
+  pdschBLER,
+  pdschMCS,
+  pdschRETX,
+  pdschThroughput,
+  pdschRBs,
+  config
+};
+
 typedef struct scopeData_s {
   int *argc;
   char **argv;
@@ -69,6 +89,7 @@ typedef struct scopeData_s {
   void *liveData;
   void (*slotFunc)(int32_t *data, int slot,  void *scopeData);
   void (*copyData)(PHY_VARS_NR_UE *,enum UEdataType, void *data, int elementSz, int colSz, int lineSz);
+  void (*scopeUpdater)(enum PlotTypeGnbIf plotType, int numElements);
 } scopeData_t;
 
 typedef struct {
@@ -83,7 +104,7 @@ int end_forms(void) ;
 void UEcopyData(PHY_VARS_NR_UE *ue, enum UEdataType type, void *dataIn, int elementSz, int colSz, int lineSz);
 
 #define UEscopeCopy(ue, type, ...) if(ue->scopeData) ((scopeData_t*)ue->scopeData)->copyData(ue, type, ##__VA_ARGS__);
-
+#define GnbScopeUpdate(gNB, type, numElt) if(gNB->scopeData) ((scopeData_t*)gNB->scopeData)->scopeUpdater(type, numElt);
 extended_kpi_ue* getKPIUE();
 
 #endif

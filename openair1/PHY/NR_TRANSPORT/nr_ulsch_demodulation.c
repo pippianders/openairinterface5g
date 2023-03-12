@@ -8,6 +8,7 @@
 #include "PHY/NR_ESTIMATION/nr_ul_estimation.h"
 #include "PHY/defs_nr_common.h"
 #include "common/utils/nr/nr_common.h"
+#include <openair1/PHY/TOOLS/phy_scope_interface.h>
 
 //#define DEBUG_CH_COMP
 //#define DEBUG_RB_EXT
@@ -1966,6 +1967,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   uint8_t shift_ch_ext = rel15_ul->nrOfLayers > 1 ? log2_approx(max_ch >> 11) : 0;
   uint8_t ad_shift = 1 + log2_approx(frame_parms->nb_antennas_rx >> 2) + (rel15_ul->nrOfLayers == 2);
 
+  int num_re_total = 0;
   for(uint8_t symbol = rel15_ul->start_symbol_index; symbol < (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols); symbol++) {
     uint8_t dmrs_symbol_flag = (rel15_ul->ul_dmrs_symb_pos >> symbol) & 0x01;
     if (dmrs_symbol_flag == 1) {
@@ -1988,6 +1990,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
       nb_re_pusch = rel15_ul->rb_size * NR_NB_SC_PER_RB;
     }
 
+    num_re_total += nb_re_pusch;
     gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[symbol] = nb_re_pusch;
     LOG_D(PHY,"symbol %d: nb_re_pusch %d, DMRS symbl used for Chest :%d \n", symbol, nb_re_pusch, gNB->pusch_vars[ulsch_id]->dmrs_symbol);
 
@@ -2132,4 +2135,9 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
       rxdataF_ext_offset += gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[symbol];
     }
   } // symbol loop
+  if (!(frame % 128)) {
+    int num_llr = num_re_total*rel15_ul->qam_mod_order;
+    GnbScopeUpdate(gNB, puschLLR, num_llr);
+    GnbScopeUpdate(gNB, puschIQ, num_re_total);
+  }
 }
