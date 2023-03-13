@@ -59,10 +59,11 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
+#include "pdcp.h"
 
 #include "intertask_interface.h"
 
-#include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 
 #include "system.h"
 #include <openair2/GNB_APP/gnb_app.h>
@@ -153,18 +154,7 @@ int otg_enabled;
 uint32_t timing_advance = 0;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
-#include <executables/split_headers.h>
 #include <SIMULATION/ETH_TRANSPORT/proto.h>
-
-int split73=0;
-void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
-  AssertFatal(false, "Must not be called in this context\n");
-}
-void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask,
-                   uint16_t rnti, int32_t stat) {
-  AssertFatal(false, "Must not be called in this context\n");
-}
-
 
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
@@ -260,8 +250,8 @@ unsigned int build_rfdc(int dcoff_i_rxfe, int dcoff_q_rxfe) {
 #define KBLU  "\x1B[34m"
 #define RESET "\033[0m"
 
-
-void exit_function(const char *file, const char *function, const int line, const char *s) {
+void exit_function(const char *file, const char *function, const int line, const char *s, const int assert)
+{
   int ru_id;
 
   if (s != NULL) {
@@ -285,8 +275,12 @@ void exit_function(const char *file, const char *function, const int line, const
     }
   }
 
-  sleep(1); //allow lte-softmodem threads to exit first
-  exit(1);
+  if (assert) {
+    abort();
+  } else {
+    sleep(1); // allow nr-softmodem threads to exit first
+    exit(EXIT_SUCCESS);
+  }
 }
 
 
@@ -539,7 +533,7 @@ void wait_gNBs(void) {
 void terminate_task(task_id_t task_id, module_id_t mod_id) {
   LOG_I(GNB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
   MessageDef *msg;
-  msg = itti_alloc_new_message (ENB_APP, 0, TERMINATE_MESSAGE);
+  msg = itti_alloc_new_message (TASK_ENB_APP, 0, TERMINATE_MESSAGE);
   itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
 
@@ -709,6 +703,15 @@ int main( int argc, char **argv ) {
       p.gNB=RC.gNB[0];
       p.ru=RC.ru[0];
       load_softscope("nr",&p);
+    }
+
+    if(IS_SOFTMODEM_DOSCOPE_QT) {
+      scopeParms_t p;
+      p.argc = &argc;
+      p.argv = argv;
+      p.gNB  = RC.gNB[0];
+      p.ru   = RC.ru[0];
+      load_softscope("nrqt", &p);
     }
 
     if (NFAPI_MODE != NFAPI_MODE_PNF && NFAPI_MODE != NFAPI_MODE_VNF) {

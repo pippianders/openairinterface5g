@@ -77,6 +77,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "create_tasks.h"
 
+#include "pdcp.h"
 
 #include "PHY/INIT/phy_init.h"
 
@@ -84,7 +85,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "lte-softmodem.h"
 #include "NB_IoT_interface.h"
-#include <executables/split_headers.h>
 
 #if USING_GPROF
 #  include "sys/gmon.h"
@@ -145,14 +145,6 @@ int rx_input_level_dBm;
 int otg_enabled;
 
 uint64_t num_missed_slots=0; // counter for the number of missed slots
-
-int split73=0;
-void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
-  AssertFatal(false, "Must not be called in this context\n");
-}
-void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask, uint16_t rnti, int32_t stat) {
-  AssertFatal(false, "Must not be called in this context\n");
-}
 
 RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mask,pthread_mutex_t *ru_mutex,pthread_cond_t *ru_cond);
 
@@ -250,8 +242,8 @@ unsigned int build_rfdc(int dcoff_i_rxfe, int dcoff_q_rxfe) {
   return (dcoff_i_rxfe + (dcoff_q_rxfe<<8));
 }
 
-
-void exit_function(const char *file, const char *function, const int line, const char *s) {
+void exit_function(const char *file, const char *function, const int line, const char *s, const int assert)
+{
   int ru_id;
 
   if (s != NULL) {
@@ -275,8 +267,12 @@ void exit_function(const char *file, const char *function, const int line, const
     }
   }
 
-  sleep(1); //allow lte-softmodem threads to exit first
-  exit(1);
+  if (assert) {
+    abort();
+  } else {
+    sleep(1); // allow lte-softmodem threads to exit first
+    exit(EXIT_SUCCESS);
+  }
 }
 
 

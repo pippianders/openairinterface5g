@@ -38,7 +38,7 @@
 #include "PHY/defs_nr_UE.h"
 #include "PHY/phy_vars_nr_ue.h"
 #include "PHY/types.h"
-#include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/MODULATION/modulation_UE.h"
@@ -89,7 +89,6 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 double cpuf;
 char *uecap_file;
 
-uint16_t sf_ahead=4 ;
 uint16_t sl_ahead=0;
 //uint8_t nfapi_mode = 0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
@@ -99,21 +98,12 @@ nfapi_ue_release_request_body_t release_rntis;
 instance_t DUuniqInstance=0;
 instance_t CUuniqInstance=0;
 
-// dummy functions
-int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
-
-int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
-                              const int CC_id,
-                              const uint8_t gNB_index,
-                              const frame_t frame,
-                              const sub_frame_t sub_frame,
-                              const rnti_t rnti,
-                              const channel_t channel,
-                              const uint8_t* pduP,
-                              const sdu_size_t pdu_len)
+int nr_derive_key_ng_ran_star(uint16_t pci, uint64_t nr_arfcn_dl, const uint8_t key[32], uint8_t *key_ng_ran_star)
 {
   return 0;
 }
+
+int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info) { return(0);  }
 
 void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index)
 {
@@ -130,69 +120,15 @@ int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
   return 0;
 }
 
-void
-rrc_data_ind(
-  const protocol_ctxt_t *const ctxt_pP,
-  const rb_id_t                Srb_id,
-  const sdu_size_t             sdu_sizeP,
-  const uint8_t   *const       buffer_pP
-)
-{
-}
-
 int nr_derive_key(int alg_type, uint8_t alg_id,
                const uint8_t key[32], uint8_t **out)
 {
   return 0;
 }
 
-void config_common(int Mod_idP,
-                   int pdsch_AntennaPorts,
-                   int pusch_AntennaPorts,
-                   NR_ServingCellConfigCommon_t *scc);
-
-int generate_dlsch_header(unsigned char *mac_header,
-                          unsigned char num_sdus,
-                          unsigned short *sdu_lengths,
-                          unsigned char *sdu_lcids,
-                          unsigned char drx_cmd,
-                          unsigned short timing_advance_cmd,
-                          unsigned char *ue_cont_res_id,
-                          unsigned char short_padding,
-                          unsigned short post_padding){return 0;}
-
-// Dummy function to avoid linking error at compilation of nr-dlsim
-int is_x2ap_enabled(void)
-{
-  return 0;
-}
-
-int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
-                                            int             CC_idP,
-                                            int             UE_id,
-                                            rnti_t          rntiP,
-                                            const uint8_t   *sduP,
-                                            sdu_size_t      sdu_lenP,
-                                            const uint8_t   *sdu2P,
-                                            sdu_size_t      sdu2_lenP) {
-  return 0;
-}
-
 void processSlotTX(void *arg) {}
 
 nr_bler_struct nr_bler_data[NR_NUM_MCS];
-
-//nFAPI P7 dummy functions to avoid linking errors 
-
-int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0);  }
-int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req){ return(0);  }
-int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req){ return(0);  }
-int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req){ return(0);  }
-int oai_nfapi_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) { return(0);  }
-int oai_nfapi_nr_crc_indication(nfapi_nr_crc_indication_t *ind) { return(0);  }
-int oai_nfapi_nr_srs_indication(nfapi_nr_srs_indication_t *ind) { return(0);  }
-int oai_nfapi_nr_uci_indication(nfapi_nr_uci_indication_t *ind) { return(0);  }
-int oai_nfapi_nr_rach_indication(nfapi_nr_rach_indication_t *ind) { return(0);  }
 
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
@@ -251,9 +187,10 @@ void nr_dlsim_preprocessor(module_id_t module_id,
    * configuration */
   current_BWP->mcsTableIdx = g_mcsTableIdx;
   sched_pdsch->time_domain_allocation = get_dl_tda(RC.nrmac[module_id], scc, slot);
-  AssertFatal(sched_pdsch->time_domain_allocation>=0,"Unable to find PDSCH time domain allocation in list\n");
+  AssertFatal(sched_pdsch->time_domain_allocation >= 0,"Unable to find PDSCH time domain allocation in list\n");
 
-  sched_pdsch->tda_info = nr_get_pdsch_tda_info(current_BWP, sched_pdsch->time_domain_allocation);
+  sched_pdsch->tda_info = get_dl_tda_info(current_BWP, sched_ctrl->search_space->searchSpaceType->present, sched_pdsch->time_domain_allocation,
+                                          NR_MIB__dmrs_TypeA_Position_pos2, 1, NR_RNTI_C, sched_ctrl->coreset->controlResourceSetId, false);
 
   sched_pdsch->dmrs_parms = get_dl_dmrs_params(scc,
                                                current_BWP,
@@ -304,6 +241,7 @@ int NB_UE_INST = 1;
 
 int main(int argc, char **argv)
 {
+  setbuf(stdout, NULL);
   char c;
   int i,aa;//,l;
   double sigma2, sigma2_dB=10, SNR, snr0=-2.0, snr1=2.0;
@@ -782,23 +720,23 @@ int main(int argc, char **argv)
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
 
   // common configuration
-  rrc_mac_config_req_gNB(0, pdsch_AntennaPorts, n_tx, 0, 6, scc, NULL, NULL, 0, 0, NULL);
+  nr_mac_config_scc(RC.nrmac[0], pdsch_AntennaPorts, n_tx, 0, 6, scc);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0, pdsch_AntennaPorts, n_tx, 0, 6, scc, NULL, NULL, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  nr_mac_add_test_ue(RC.nrmac[0], secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity, secondaryCellGroup);
   // reset preprocessor to the one of DLSIM after it has been set during
-  // rrc_mac_config_req_gNB
+  // nr_mac_config_scc()
   gNB_mac->pre_processor_dl = nr_dlsim_preprocessor;
   phy_init_nr_gNB(gNB);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
   NR_UE_info_t *UE_info = RC.nrmac[0]->UE_info.list[0];
 
-  configure_UE_BWP(RC.nrmac[0], scc, &UE_info->UE_sched_ctrl, NULL, UE_info);
+  configure_UE_BWP(RC.nrmac[0], scc, &UE_info->UE_sched_ctrl, NULL, UE_info, -1, -1);
 
   // stub to configure frame_parms
   //  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   // call MAC to configure common parameters
 
-  /* rrc_mac_config_req_gNB() has created one user, so set the scheduling
+  /* nr_mac_add_test_ue() has created one user, so set the scheduling
    * parameters from command line in global variables that will be picked up by
    * scheduling preprocessor */
   if (g_mcsIndex < 0) g_mcsIndex = 9;
@@ -1214,9 +1152,11 @@ int main(int argc, char **argv)
         uint8_t  nb_symb_sch = rel15->NrOfSymbols;
 
         available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, rel15->nrOfLayers);
-        if(pdu_bit_map & 0x1) {
-          available_bits-= (ptrsSymbPerSlot * ptrsRePerSymb *rel15->nrOfLayers* 2);
-          printf("[DLSIM][PTRS] Available bits are: %5u, removed PTRS bits are: %5u \n",available_bits, (ptrsSymbPerSlot * ptrsRePerSymb *rel15->nrOfLayers* 2) );
+        if (pdu_bit_map & 0x1) {
+          available_bits -= (ptrsSymbPerSlot * ptrsRePerSymb * rel15->nrOfLayers * 2);
+          if (trial == 0 && round == 0) {
+            printf("[DLSIM][PTRS] Available bits are: %5u, removed PTRS bits are: %5u \n", available_bits, (ptrsSymbPerSlot * ptrsRePerSymb * rel15->nrOfLayers * 2));
+          }
         }
 
         for (i = 0; i < available_bits; i++) {

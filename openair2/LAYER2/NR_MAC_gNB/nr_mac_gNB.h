@@ -51,6 +51,7 @@
 /* RRC */
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_CellGroupConfig.h"
+#include "NR_BCCH-DL-SCH-Message.h"
 
 /* PHY */
 #include "time_meas.h"
@@ -63,6 +64,7 @@
 /* MAC */
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
+#include "LAYER2/MAC/mac.h"
 #include "NR_TAG.h"
 
 #include <openair3/UICC/usim_interface.h>
@@ -94,8 +96,9 @@ typedef enum {
   Msg2 = 1,
   WAIT_Msg3 = 2,
   Msg3_retransmission = 3,
-  Msg4 = 4,
-  WAIT_Msg4_ACK = 5
+  Msg3_dcch_dtch = 4,
+  Msg4 = 5,
+  WAIT_Msg4_ACK = 6
 } RA_gNB_state_t;
 
 typedef struct NR_preamble_ue {
@@ -163,8 +166,6 @@ typedef struct {
   uint8_t msg3_cqireq;
   /// Round of Msg3 HARQ
   uint8_t msg3_round;
-  /// Flag to indicate if Msg3 carries a DCCH or DTCH message
-  bool msg3_dcch_dtch;
   int msg3_startsymb;
   int msg3_nrsymb;
   /// TBS used for Msg4
@@ -333,12 +334,6 @@ typedef struct NR_sched_pucch {
   int nr_of_symb;
   int start_symb;
 } NR_sched_pucch_t;
-
-typedef struct NR_tda_info {
-  mappingType_t mapping_type;
-  int startSymbolIndex;
-  int nrOfSymbols;
-} NR_tda_info_t;
 
 typedef struct NR_pusch_dmrs {
   uint8_t N_PRB_DMRS;
@@ -665,7 +660,6 @@ typedef struct {
   asn_enc_rval_t enc_rval;
   // UE selected beam index
   uint8_t UE_beam_index;
-  bool Msg3_dcch_dtch;
   bool Msg4_ACKed;
   uint32_t ra_timer;
   float ul_thr_ue;
@@ -739,6 +733,8 @@ typedef struct gNB_MAC_INST_s {
   /// NFAPI UL TTI Request Structure for future TTIs, dynamically allocated
   /// because length depends on number of slots
   nfapi_nr_ul_tti_request_t        *UL_tti_req_ahead[NFAPI_CC_MAX];
+  int UL_tti_req_ahead_size;
+  int vrb_map_UL_size;
   /// NFAPI HI/DCI0 Config Request Structure
   nfapi_nr_ul_dci_request_t         UL_dci_req[NFAPI_CC_MAX];
   /// NFAPI DL PDU structure

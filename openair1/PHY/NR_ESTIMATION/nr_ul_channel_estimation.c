@@ -102,9 +102,11 @@ __attribute__((always_inline)) inline c16_t c32x16cumulVectVectWithSteps(c16_t *
 
 int get_delay_idx(int delay) {
   int delay_idx = MAX_UL_DELAY_COMP + delay;
+  // If the measured delay is less than -MAX_UL_DELAY_COMP, a -MAX_UL_DELAY_COMP delay is compensated.
   if (delay_idx < 0) {
     delay_idx = 0;
   }
+  // If the measured delay is greater than +MAX_UL_DELAY_COMP, a +MAX_UL_DELAY_COMP delay is compensated.
   if (delay_idx > MAX_UL_DELAY_COMP<<1) {
     delay_idx = MAX_UL_DELAY_COMP<<1;
   }
@@ -301,78 +303,30 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
     } else if (pusch_pdu->dmrs_config_type == pusch_dmrs_type2 && chest_freq == 0) { // pusch_dmrs_type2  |p_r,p_l,d,d,d,d,p_r,p_l,d,d,d,d|
       LOG_D(PHY, "PUSCH estimation DMRS type 2, Freq-domain interpolation\n");
-
-      // LS channel estimation
       c16_t *pil = pilot;
-      int re_offset = k0;
-      c16_t ch_r = c16mulShift(*pil, rxdataF[soffset + nushift + re_offset], 15);
-      *max_ch = max(*max_ch, max(abs(ch_r.r), abs(ch_r.i)));
-      ul_ls_est[0] = ch_r;
-      pil++;
-      ch_offset++;
-      re_offset = (re_offset + 1) % symbolSize;
-      for (int re_cnt = 1; re_cnt < (nb_rb_pusch * NR_NB_SC_PER_RB) - 5; re_cnt += 6) {
-        c16_t ch_l = c16mulShift(*pil, rxdataF[soffset + nushift + re_offset], 15);
-        *max_ch = max(*max_ch, max(abs(ch_l.r), abs(ch_l.i)));
-        for (int re_idx = 0; re_idx < 5; re_idx++)
-          ul_ls_est[re_cnt + re_idx] = ch_l;
+      c16_t *rx = &rxdataF[soffset + nushift];
+      for (int n = 0; n < nb_rb_pusch * NR_NB_SC_PER_RB; n += 6) {
+        c16_t ch0 = c16mulShift(*pil, rx[(k0 + n) % symbolSize], 15);
         pil++;
-        ch_offset++;
-        re_offset = (re_offset + 5) % symbolSize;
-        ch_r = c16mulShift(*pil, rxdataF[soffset + nushift + re_offset], 15);
-        *max_ch = max(*max_ch, max(abs(ch_r.r), abs(ch_r.i)));
-        ul_ls_est[re_cnt + 5] = ch_r;
+        c16_t ch1 = c16mulShift(*pil, rx[(k0 + n + 1) % symbolSize], 15);
         pil++;
-        ch_offset += 5;
-        re_offset = (re_offset + 1) % symbolSize;
+        c16_t ch = c16addShift(ch0, ch1, 1);
+        *max_ch = max(*max_ch, max(abs(ch.r), abs(ch.i)));
+        multadd_real_four_symbols_vector_complex_scalar(filt8_rep4, &ch, &ul_ls_est[n]);
+        ul_ls_est[n + 4] = ch;
+        ul_ls_est[n + 5] = ch;
+        noise_amp2 += c16amp2(c16sub(ch0, ch));
+        nest_count++;
       }
-      c16_t ch_l = c16mulShift(*pil, rxdataF[soffset + nushift + re_offset], 15);
-      *max_ch = max(*max_ch, max(abs(ch_l.r), abs(ch_l.i)));
-      for (int re_idx = 0; re_idx < 5; re_idx++)
-        ul_ls_est[(nb_rb_pusch * NR_NB_SC_PER_RB) - 5 + re_idx] = ch_l;
-      ch_offset++;
 
-      // Delay computation
+      // Delay compensation
       freq2time(symbolSize, (int16_t *)ul_ls_est, (int16_t *)gNB->pusch_vars[ul_id]->ul_ch_estimates_time[aarx]);
       nr_est_timing_advance_pusch(&gNB->frame_parms, gNB->pusch_vars[ul_id]->ul_ch_estimates_time[aarx], &gNB->measurements.delay[ul_id]);
       int delay = gNB->measurements.delay[ul_id].pusch_est_delay;
-      int delay_idx = get_delay_idx(delay);
+      int delay_idx = get_delay_idx(-delay);
       c16_t *ul_delay_table = gNB->frame_parms.ul_delay_table[delay_idx];
-
-#ifdef DEBUG_PUSCH
-      printf("Estimated delay = %i\n", delay >> 1);
-#endif
-
-      // Channel interpolation
-      c16_t ch16 = c16mulShift(ul_ls_est[0], ul_delay_table[0], 8);
-      *ul_ch = ch16;
-      ul_ch++;
-      for (int re_cnt = 1; re_cnt < (nb_rb_pusch * NR_NB_SC_PER_RB) - 5; re_cnt += 6) {
-        ch16 = c16mulShift(ul_ls_est[re_cnt], ul_delay_table[re_cnt], 8);
-        c16_t ch16_p5 = c16mulShift(ul_ls_est[re_cnt + 5], ul_delay_table[re_cnt + 5], 8);
-        *ul_ch = ch16;
-        ul_ch++;
-        multadd_real_four_symbols_vector_complex_scalar(filt8_ml2, &ch16, ul_ch);
-        multadd_real_four_symbols_vector_complex_scalar(filt8_mr2, &ch16_p5, ul_ch);
-        ul_ch += 4;
-        *ul_ch = ch16_p5;
-        ul_ch++;
-      }
-      ch16 = c16mulShift(ul_ls_est[(nb_rb_pusch * NR_NB_SC_PER_RB) - 5], ul_delay_table[(nb_rb_pusch * NR_NB_SC_PER_RB) - 5], 8);
-      c16_t ch16_p5 = c16mulShift(ul_ls_est[(nb_rb_pusch * NR_NB_SC_PER_RB) - 6], ul_delay_table[(nb_rb_pusch * NR_NB_SC_PER_RB) - 6], 8);
-      *ul_ch = ch16;
-      ul_ch++;
-      multadd_real_four_symbols_vector_complex_scalar(filt8_rr1, &ch16, ul_ch);
-      multadd_real_four_symbols_vector_complex_scalar(filt8_rr2, &ch16_p5, ul_ch);
-      __m128i *ul_ch_128 = (__m128i *)&ul_ch_estimates[p * gNB->frame_parms.nb_antennas_rx + aarx][ch_offset];
-      ul_ch_128[0] = _mm_slli_epi16(ul_ch_128[0], 2);
-
-      // Revert delay
-      ul_ch = &ul_ch_estimates[p * gNB->frame_parms.nb_antennas_rx + aarx][symbolSize * symbol];
-      int inv_delay_idx = get_delay_idx(-delay);
-      c16_t *ul_inv_delay_table = gNB->frame_parms.ul_delay_table[inv_delay_idx];
-      for (int re_cnt = 0; re_cnt < nb_rb_pusch * NR_NB_SC_PER_RB; re_cnt++) {
-        ul_ch[re_cnt] = c16mulShift(ul_ch[re_cnt], ul_inv_delay_table[re_cnt], 8);
+      for (int n = 0; n < nb_rb_pusch * NR_NB_SC_PER_RB; n++) {
+        ul_ch[n] = c16mulShift(ul_ls_est[n], ul_delay_table[n % 6], 8);
       }
 
     }
