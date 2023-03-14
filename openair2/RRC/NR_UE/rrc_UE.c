@@ -194,10 +194,10 @@ int8_t nr_rrc_ue_decode_secondary_cellgroup_config(const module_id_t module_id,
                                         size, 0, 0);
 
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-    printf("NR_CellGroupConfig decode error\n");
+    LOG_E(NR_RRC, "NR_CellGroupConfig decode error\n");
     for (i=0; i<size; i++)
-      printf("%02x ",buffer[i]);
-    printf("\n");
+      LOG_E(NR_RRC, "%02x ",buffer[i]);
+    LOG_E(NR_RRC, "\n");
     // free the memory
     SEQUENCE_free( &asn_DEF_NR_CellGroupConfig, (void *)cell_group_config, 1 );
     return -1;
@@ -992,7 +992,7 @@ int nr_decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index 
     if (new_sib == 1) {
       NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt++;
       if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt == sib1->si_SchedulingInfo->schedulingInfoList.list.count)
-        nr_rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_SIB_COMPLETE );
+        nr_rrc_set_sub_state(ctxt_pP->module_id, RRC_SUB_STATE_IDLE_SIB_COMPLETE_NR);
   
       LOG_I(NR_RRC,"SIStatus %x, SIcnt %d/%d\n",
             NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus,
@@ -1025,15 +1025,15 @@ static int8_t check_requested_SI_List(module_id_t module_id, BIT_STRING_t reques
 
     LOG_D(RRC, "SIBs broadcasting: ");
     for(int i = 0; i < sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.count; i++) {
-      printf("SIB%li  ", sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[i]->type + 2);
+      LOG_D(RRC, "SIB%li  ", sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[i]->type + 2);
     }
-    printf("\n");
+    LOG_D(RRC, "\n");
 
     LOG_D(RRC, "SIBs needed by UE: ");
     for(int j = 0; j < 8*requested_SI_List.size; j++) {
       if( ((requested_SI_List.buf[j/8]>>(j%8))&1) == 1) {
 
-        printf("SIB%i  ", j + 2);
+        LOG_D(RRC, "SIB%i  ", j + 2);
 
         SIB_to_request[j] = true;
         for(int i = 0; i < sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.count; i++) {
@@ -1045,17 +1045,17 @@ static int8_t check_requested_SI_List(module_id_t module_id, BIT_STRING_t reques
 
       }
     }
-    printf("\n");
+    LOG_D(RRC, "\n");
 
     LOG_D(RRC, "SIBs to request by UE: ");
     bool do_ra = false;
     for(int j = 0; j < 8*requested_SI_List.size; j++) {
       if(SIB_to_request[j]) {
-        printf("SIB%i  ", j + 2);
+        LOG_D(RRC, "SIB%i  ", j + 2);
         do_ra = true;
       }
     }
-    printf("\n");
+    LOG_D(RRC, "\n");
 
     if(do_ra) {
 
@@ -1217,7 +1217,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
   if (nr_rrc_get_sub_state(module_id) == RRC_SUB_STATE_IDLE_SIB_COMPLETE_NR) {
     //if ( (NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data != NULL) || (!get_softmodem_params()->sa)) {
       nr_rrc_ue_generate_RRCSetupRequest(module_id, 0);
-      nr_rrc_set_sub_state( module_id, RRC_SUB_STATE_IDLE_CONNECTING );
+      nr_rrc_set_sub_state(module_id, RRC_SUB_STATE_IDLE_CONNECTING_NR);
     //}
   }
 
@@ -1458,8 +1458,8 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 
    if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
      for (i=0; i<buffer_len; i++)
-       printf("%02x ",bufferP[i]);
-     printf("\n");
+       LOG_D(NR_RRC, "%02x ",bufferP[i]);
+     LOG_D(NR_RRC, "\n");
      // free the memory
      SEQUENCE_free( &asn_DEF_NR_DL_DCCH_Message, (void *)nr_dl_dcch_msg, 1 );
      return -1;
