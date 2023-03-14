@@ -1,7 +1,7 @@
 version: '3.8'
 services:
     oai-enb:
-      image: oai-enb:latest
+        image: oai-enb:latest
         privileged: true
         container_name: oai-enb
         environment:
@@ -10,26 +10,9 @@ services:
             USE_ADDITIONAL_OPTIONS: --usrp-tx-thread-config 1 --thread-pool 0,2,4,6
         volumes:
             - ../../conf_files/enb.band38.lte_2x2.100PRB.usrpn310.conf:/opt/oai-enb/etc/mounted.conf
+        network_mode: "host"
         healthcheck:
             test: /bin/bash -c "pgrep lte-softmodem"
             interval: 10s
             timeout: 5s
             retries: 5
-        networks:
-            oai_core:
-                ipv4_address: 192.168.98.2
-            usrp1:
-                ipv4_address: 192.168.10.129
-networks:
-    core-net:
-        external:
-            name: demo-oai-public-net
-    usrp1:
-         name: usrp1
-         driver: macvlan
-         driver_opts:
-            parent: enp59s0f0
-         ipam:
-           config:
-              - subnet: "192.168.10.0/24"
-                ip_range: "192.168.10.128/26"
