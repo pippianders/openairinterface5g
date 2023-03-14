@@ -41,7 +41,7 @@
 #include "OCG.h"
 #include "RRC/NR/nr_rrc_extern.h"
 #include "common/utils/nr/nr_common.h"
-
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 
 #include "pdcp.h"
 
