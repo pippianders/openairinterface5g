@@ -962,6 +962,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
     NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
 
     fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, rx_slot);
+    dl_config->sfn  = rx_frame;
+    dl_config->slot = rx_slot;
 
     nr_scheduled_response_t scheduled_response;
     nr_dcireq_t dcireq;
