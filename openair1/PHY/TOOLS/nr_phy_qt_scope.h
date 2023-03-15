@@ -24,6 +24,7 @@
 #ifndef QT_SCOPE_MAINWINDOW_H
 #define QT_SCOPE_MAINWINDOW_H
 
+#include <set>
 #include <QtCharts>
 
 extern "C" {
@@ -223,51 +224,6 @@ class CIRPlot : public QChart {
   QValueAxis *axisY;
 };
 
-/// New data signal emiter
-class NewDataHere : public QObject {
-  Q_OBJECT
-
- signals:
-  void updateScope();
-};
-
-/// Chart class for plotting LLRs
-class LLRPlotGnb : public QChart {
-  Q_OBJECT
-
- public:
-  /// Constructor
-  /// \param data Pointer to the LLR data
-  /// \param len Length of the LLR data
-  LLRPlotGnb(int16_t *data, int len, PlotTypeGnb plotType);
-  ~LLRPlotGnb();
-
- public slots:
-  void updatePlot();
-
- public:
-  /// Length of the LLR data
-  int len;
-
-  NewDataHere *newData;
-
- private:
-  /// Pointer to the LLR data
-  int16_t *data;
-
-  /// Scatter series used to plot the LLR in the chart
-  QScatterSeries *series;
-
-  /// Horizontal axis of the chart
-  QValueAxis *axisX;
-
-  /// Vertical axis of the chart
-  QValueAxis *axisY;
-
-  /// Currently plotted KPI type
-  PlotTypeGnb plotType;
-};
-
 /// Chart class for plotting LLRs
 class LLRPlot : public QChart {
   Q_OBJECT
@@ -276,10 +232,19 @@ class LLRPlot : public QChart {
   /// Constructor
   /// \param data Pointer to the LLR data
   /// \param len Length of the LLR data
-  LLRPlot(int16_t *data, int len);
+  /// \param interval update interval in ms (0 means no timer-triggered updates)
+  /// \param notificationSet pointer to a std::set for update notifications
+  LLRPlot(int16_t *data, int len, int interval = 1000, std::set<LLRPlot *> *notificationSet = nullptr);
+
+  /// Destructor
+  ~LLRPlot();
+
+ public slots:
+  /// This function updates the plotted LLR
+  void updatePlot(int len);
 
  protected:
-  /// This function is triggered when the own timer expires. It updates the plotted LLR
+  /// This function is triggered when the own timer expires. It calls updatePlot() to update the plotted LLR
   /// \param event Pointer to the timer event
   virtual void timerEvent(QTimerEvent *event) override;
 
@@ -290,6 +255,9 @@ class LLRPlot : public QChart {
   /// Length of the LLR data
   int len;
 
+  /// Pointer to a std::set for update notifications
+  std::set<LLRPlot *> *notificationSet;
+
   /// Scatter series used to plot the LLR in the chart
   QScatterSeries *series;
 
@@ -298,42 +266,6 @@ class LLRPlot : public QChart {
 
   /// Vertical axis of the chart
   QValueAxis *axisY;
-};
-
-/// Chart class for plotting the I/Q constellation diagram
-class IQPlotGnb : public QChart {
-  Q_OBJECT
-
- public:
-  /// Constructor
-  /// \param data Pointer to the complex I/Q data
-  /// \param len Length of the I/Q data
-  IQPlotGnb(complex16 *data, int len, PlotTypeGnb plotType);
-  ~IQPlotGnb();
-
-  /// Length of the I/Q data
-  int len;
-
-  NewDataHere *newData;
-
- public slots:
-  void updatePlot();
-
- private:
-  /// Pointer to the I/Q data
-  complex16 *data;
-
-  /// Scatter series used to plot the I/Q constellation diagram
-  QScatterSeries *series;
-
-  /// Horizontal axis of the chart
-  QValueAxis *axisX;
-
-  /// Vertical axis of the chart
-  QValueAxis *axisY;
-
-  /// Currently plotted KPI type
-  PlotTypeGnb plotType;
 };
 
 /// Chart class for plotting the I/Q constellation diagram
@@ -344,10 +276,19 @@ class IQPlot : public QChart {
   /// Constructor
   /// \param data Pointer to the complex I/Q data
   /// \param len Length of the I/Q data
-  IQPlot(complex16 *data, int len);
+  /// \param interval update interval in ms (0 means no timer-triggered updates)
+  /// \param notificationSet pointer to a std::set for update notifications
+  IQPlot(complex16 *data, int len, int interval = 1000, std::set<IQPlot *> *notificationSet = nullptr);
+
+  /// Destructor
+  ~IQPlot();
+
+ public slots:
+  /// This function updates the plotted I/Q constellation diagram
+  void updatePlot(int len);
 
  protected:
-  /// This function is triggered when the own timer expires. It updates the plotted I/Q constellation diagram
+  /// This function is triggered when the own timer expires. It calls updatePlot() to update the plotted I/Q constellation diagram
   /// \param event Pointer to the timer event
   virtual void timerEvent(QTimerEvent *event) override;
 
@@ -357,6 +298,9 @@ class IQPlot : public QChart {
 
   /// Length of the I/Q data
   int len;
+
+  /// Pointer to a std::set for update notifications
+  std::set<IQPlot *> *notificationSet;
 
   /// Scatter series used to plot the I/Q constellation diagram
   QScatterSeries *series;

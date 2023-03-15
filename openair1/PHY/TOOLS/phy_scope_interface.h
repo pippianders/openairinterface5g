@@ -37,7 +37,7 @@
 typedef struct {
   uint32_t nb_total;
   uint32_t nb_nack;
-  uint32_t blockSize;   // block size, to be used for throughput calculation
+  uint32_t blockSize; // block size, to be used for throughput calculation
   uint16_t nofRBs;
   uint8_t  dl_mcs;
 } extended_kpi_ue;
@@ -62,23 +62,8 @@ enum UEdataType {
 };
 
 enum PlotTypeGnbIf {
-  empty,
-  waterFall,
-  CIR,
   puschLLRe,
   puschIQe,
-  puschSNR,
-  puschBLER,
-  puschMCS,
-  puschRETX,
-  puschThroughput,
-  pdschSNR,
-  pdschBLER,
-  pdschMCS,
-  pdschRETX,
-  pdschThroughput,
-  pdschRBs,
-  config
 };
 
 typedef struct scopeData_s {
@@ -87,8 +72,8 @@ typedef struct scopeData_s {
   RU_t *ru;
   PHY_VARS_gNB *gNB;
   void *liveData;
-  void (*slotFunc)(int32_t *data, int slot,  void *scopeData);
-  void (*copyData)(PHY_VARS_NR_UE *,enum UEdataType, void *data, int elementSz, int colSz, int lineSz);
+  void (*slotFunc)(int32_t *data, int slot, void *scopeData);
+  void (*copyData)(PHY_VARS_NR_UE *, enum UEdataType, void *data, int elementSz, int colSz, int lineSz);
   void (*scopeUpdater)(enum PlotTypeGnbIf plotType, int numElements);
 } scopeData_t;
 
@@ -100,11 +85,15 @@ typedef struct {
 } scopeGraphData_t;
 
 int load_softscope(char *exectype, void *initarg);
-int end_forms(void) ;
+int end_forms(void);
 void UEcopyData(PHY_VARS_NR_UE *ue, enum UEdataType type, void *dataIn, int elementSz, int colSz, int lineSz);
 
-#define UEscopeCopy(ue, type, ...) if(ue->scopeData) ((scopeData_t*)ue->scopeData)->copyData(ue, type, ##__VA_ARGS__);
-#define GnbScopeUpdate(gNB, type, numElt) if(gNB->scopeData) ((scopeData_t*)gNB->scopeData)->scopeUpdater(type, numElt);
-extended_kpi_ue* getKPIUE();
+#define UEscopeCopy(ue, type, ...) \
+  if (ue->scopeData)               \
+    ((scopeData_t *)ue->scopeData)->copyData(ue, type, ##__VA_ARGS__);
+#define GnbScopeUpdate(gNB, type, numElt) \
+  if (gNB->scopeData)                     \
+    ((scopeData_t *)gNB->scopeData)->scopeUpdater(type, numElt);
+extended_kpi_ue *getKPIUE();
 
 #endif
