@@ -29,7 +29,6 @@ FROM ran-base:latest AS enb-base
 
 FROM ran-build:latest AS enb-build
 
-COPY ./docker/scripts/enb_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi8/ubi:latest as oai-enb
@@ -54,9 +53,9 @@ RUN yum update -y && \
 
 WORKDIR /opt/oai-enb/bin
 COPY --from=enb-build \
-    /oai-ran/cmake_targets/ran_build/build/lte-softmodem \
-    /oai-ran/docker/scripts/entrypoint.sh \
-    ./
+    /oai-ran/cmake_targets/ran_build/build/lte-softmodem ./
+
+COPY ./docker/scripts/enb_entrypoint.sh ./entrypoint.sh
 
 COPY --from=enb-build \
     /oai-ran/cmake_targets/ran_build/build/liboai_eth_transpro.so \

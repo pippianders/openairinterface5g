@@ -29,7 +29,6 @@ FROM ran-base:latest as ru-base
 
 FROM ran-build:latest AS ru-build
 
-COPY ./docker/scripts/lte_ru_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 #start from scratch for target executable
 FROM ubuntu:focal as oai-lte-ru
@@ -58,9 +57,8 @@ RUN apt-get update && \
 
 WORKDIR /opt/oai-lte-ru/bin
 COPY --from=ru-build \
-    /oai-ran/cmake_targets/ran_build/build/oairu \
-    /oai-ran/docker/scripts/entrypoint.sh \
-    ./
+    /oai-ran/cmake_targets/ran_build/build/oairu ./
+COPY ./docker/scripts/lte_ru_entrypoint.sh ./entrypoint.sh
 
 COPY --from=ru-build \
     /oai-ran/cmake_targets/ran_build/build/liboai_eth_transpro.so \
