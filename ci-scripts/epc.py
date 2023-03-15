@@ -31,8 +31,8 @@
 #-----------------------------------------------------------
 # Import
 #-----------------------------------------------------------
-import sys              # arg
-import re               # reg
+import sys	      # arg
+import re	       # reg
 import logging
 import os
 import time
@@ -50,6 +50,8 @@ import constants as CONST
 #-----------------------------------------------------------
 # Class Declaration
 #-----------------------------------------------------------
+
+
 class EPCManagement():
 
 	def __init__(self):
@@ -68,6 +70,9 @@ class EPCManagement():
 		self.isMagmaUsed = False
 		self.cfgDeploy = '--type start-mini --scenario 1 --capture /tmp/oai-cn5g-v1.5.pcap' #from xml, 'mini' is default normal for docker-network.py
 		self.cfgUnDeploy = '--type stop-mini --scenario 1' #from xml, 'mini' is default normal for docker-network.py
+		self.OCUrl = "https://api.oai.cs.eurecom.fr:6443"
+		self.OCRegistry = "default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/"
+		self.imageToPull = ''
 
 
 #-----------------------------------------------------------
@@ -286,6 +291,70 @@ class EPCManagement():
 					if res4 is not None:
 						html_cell += '(' + res4.group('date') + ')'
 					html_cell += '\n'
+		elif re.match('OC-OAI-CN5G', self.Type, re.IGNORECASE):
+			imageNames = ["oai-nrf", "oai-amf", "oai-smf", "oai-spgwu-tiny", "oai-ausf", "oai-udm", "oai-udr", "mysql"]
+			logging.debug('Deploying OAI CN5G on Openshift Cluster')
+			lIpAddr = self.IPAddress
+			lSourcePath = self.SourceCodePath
+			ocUserName = self.OCUserName
+			ocPassword = self.OCPassword
+			ocProjectName = 'oaicicd-ran' #self.OCProjectName
+			if ocUserName == '' or ocPassword == '' or ocProjectName == '':
+				HELP.GenericHelp(CONST.Version)
+				sys.exit(
+				    'Insufficient Parameter: no OC Credentials Deploy' + ocUserName + ocPassword + ocProjectName)
+			if self.OCRegistry.startswith("http") and not self.OCRegistry.endswith("/"):
+				sys.exit(
+				    f'ocRegistry {self.OCRegistry} should not start with http:// or https:// and end on a slash /')
+			self.testCase_id = HTML.testCase_id
+			mySSH.command('cd ' + lSourcePath, '\$', 5)
+			mySSH.command(
+			    f'oc login -u {ocUserName} -p {ocPassword} --server https://api.oai.cs.eurecom.fr:6443', '\$', 30)
+			if mySSH.getBefore().count('Login successful.') == 0:
+				logging.error(
+				    '\u001B[1m OC Cluster Login Failed\u001B[0m')
+				mySSH.close()
+				HTML.CreateHtmlTestRow(
+				    'N/A', 'KO', CONST.OC_LOGIN_FAIL)
+				RAN.prematureExit = True
+				return
+			else:
+				logging.debug(
+				    '\u001B[1m   Login to OC Cluster Successfully\u001B[0m')
+			mySSH.command(f'oc project {ocProjectName}', '\$', 5)
+			if mySSH.getBefore().count(f'Already on project "{ocProjectName}"') == 0 and mySSH.getBefore().count(f'Now using project "{self.OCProjectName}"') == 0:
+				logging.error(f'\u001B[1m Unable to access OC project {ocProjectName}\u001B[0m')
+				mySSH.command('oc logout', '\$', 30)
+				mySSH.close()
+				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_PROJECT_FAIL)
+				RAN.prematureExit = True
+				return
+			else:
+				logging.debug(f'\u001B[1m   Now using project {ocProjectName}\u001B[0m')
+			for ii in imageNames:
+					mySSH.command(f'helm uninstall ' + ii, '\$', 30)
+			time.sleep(20)
+			mySSH.command(f'cd /opt/oai-cn5g-fed-develop-march-2023/ci-scripts/charts/oai-5g-basic', '\$', 5)
+			mySSH.command(f'helm spray .', '\$', 120)
+			mySSH.command(f'oc get pods', '\$', 5)
+			if mySSH.getBefore().count('Running') != 8:
+				logging.error('\u001B[1m Deploying 5GCN Failed using helm chart on OC Cluster\u001B[0m')
+				for ii in imageNames:
+					mySSH.command('helm uninstall' + ii, '\$', 5)
+				mySSH.command('oc get pods', '\$', 6, resync=True)
+				if re.search('No resources found', mySSH.getBefore()):
+					logging.debug('OC CN5G components uninstalled')
+				else:
+					logging.error('OC CN5G components not uninstalled')
+					#mySSH.command('oc logout', '\$', 30)
+					mySSH.close()
+					HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_PROJECT_FAIL)
+					RAN.prematureExit = True
+					return
+			#cmd = mySSH.command('oc logout', '\$', 5)
+			#res1 = re.search('Logged "oaicicd" out', mySSH.getBefore())
+			#if res1 is not None:
+			#	logging.debug('oaicicd-ran logged out')
 		else:
 			logging.error('This option should not occur!')
 		mySSH.close()
@@ -311,6 +380,10 @@ class EPCManagement():
 			else:
 				logging.error('no container with name oai-amf found, could not retrieve AMF IP address')
 			mySSH.close()
+		elif re.match('OC-OAI-CN5G', self.Type, re.IGNORECASE):
+			mySSH = SSH.SSHConnection()
+			mySSH.open(self.IPAddress, self.UserName, self.Password)
+			response=mySSH.command3('oc pods ls -f name=oai-amf', 10)
 
 	def CheckHSSProcess(self, status_queue):
 		try:
@@ -513,6 +586,8 @@ class EPCManagement():
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def Terminate5GCN(self, HTML):
+		# imageNames = ["oai-nrf", "oai-amf", "oai-smf", "oai-spgwu-tiny", "oai-ausf", "oai-udm", "oai-udr"]
+		imageNames = ["nrf", "amf", "smf", "spgwu", "ausf", "udm", "udr"]
 		mySSH = SSH.SSHConnection()
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
 		message = ''
@@ -545,6 +620,58 @@ class EPCManagement():
 			else:
 				message = 'No Tracking area update request'
 			logging.debug(message)
+		elif re.match('OC-OAI-5GCN', self.Type, re.IGNORECASE):
+			logging.debug('Deploying OAI CN5G on Openshift Cluster')
+			lIpAddr = self.eNBIPAddress
+			lSourcePath = self.eNBSourceCodePath
+			ocUserName = self.OCUserName
+			ocPassword = self.OCPassword
+			ocProjectName = self.OCProjectName
+			if ocUserName == '' or ocPassword == '' or ocProjectName == '':
+				HELP.GenericHelp(CONST.Version)
+				sys.exit('Insufficient Parameter: no OC Credentials Deploy')
+			if self.OCRegistry.startswith("http") and not self.OCRegistry.endswith("/"):
+				sys.exit(f'ocRegistry {self.OCRegistry} should not start with http:// or https:// and end on a slash /')
+			self.testCase_id = HTML.testCase_id
+			mySSH.command('cd ' + lSourcePath, '\$', 5)
+			mySSH.command(f'oc login -u {ocUserName} -p {ocPassword} --server https://api.oai.cs.eurecom.fr:6443', '\$', 30)
+			if mySSH.getBefore().count('Login successful.') == 0:
+				logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
+				mySSH.close()
+				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
+				RAN.prematureExit = True
+				return
+			else:
+				logging.debug('\u001B[1m   Login to OC Cluster Successfully\u001B[0m')
+			mySSH.command(f'oc project {ocProjectName}', '\$', 5)
+			if mySSH.getBefore().count(f'Already on project "{ocProjectName}"') == 0 and mySSH.getBefore().count(f'Now using project "{self.OCProjectName}"') == 0:
+			       logging.error(f'\u001B[1m Unable to access OC project {ocProjectName}\u001B[0m')
+			       mySSH.command('oc logout', '\$', 30)
+			       mySSH.close()
+			       HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_PROJECT_FAIL)
+			       RAN.prematureExit = True
+			       return
+			else:
+				logging.debug(f'\u001B[1m   Now using project {ocProjectName}\u001B[0m')
+			mySSH.command(f'cd /opt/oai-cn5g-fed-develop-march-2023/ci-scripts/charts/oai-5g-basic', '\$', 5)
+			logging.debug('OC OAI CN5G - Collecting Log files to workspace')
+			mySSH.command('echo ' + self.Password + ' | sudo rm -rf ' + self.SourceCodePath + '/logs', '\$', 5)
+			mySSH.command('mkdir ' + self.SourceCodePath + '/logs','\$', 5)
+			for ii in imageNames:
+			       podName = mySSH.command('oc get pods | grep' + ii + '| awk print $1 || true', '\$', 60)
+			       mySSH.command('oc logs -f' + podName + '-c' +  ii + ' &> logs/'+ ii + '.logs', '\$', 60)
+			mySSH.command('oc describe pod &> logs/describe-pods-post-test.logs', '\$', 5)
+			mySSH.command('oc get pods.metrics.k8s.io &> logs/nf-resource-consumption.log', '\$', 5)
+			logging.debug('Terminating OC OAI CN5G')
+			mySSH.command('helm uninstall mysql oai-amf oai-ausf oai-nrf oai-smf oai-spgwu-tiny oai-udm oai-udr', '\$', 30)
+			mySSH.command('oc get pods', '\$', 5)
+			res = re.search('No resources found in oaicicd-ran namespace.', mySSH.getBefore())
+			if res is not None:
+			       logging.debug('OC OAI CN5G components uninstalled')
+			cmd = mySSH.command('oc logout', '\$', 5)
+			res1 = re.search('Logged "oaicicd" out', mySSH.getBefore())
+			if res1 is not None:
+			       logging.debug('oaicicd-ran logged out')
 		else:
 			logging.error('This should not happen!')
 		mySSH.close()
@@ -784,6 +911,8 @@ class EPCManagement():
 				mySSH.command('zip hss.log.zip hss_check_run.*', '\$', 60)
 		elif re.match('OAICN5G', self.Type, re.IGNORECASE):
 			logging.debug('LogCollect is bypassed for that variant')
+		elif re.match('OC-OAI-CN5G', self.Type, re.IGNORECASE):
+			logging.debug('LogCollect is bypassed for that variant')
 		elif re.match('OAI', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			mySSH.command('zip hss.log.zip hss*.log', '\$', 60)
 			mySSH.command('echo ' + self.Password + ' | sudo -S rm hss*.log', '\$', 5)
@@ -819,6 +948,10 @@ class EPCManagement():
 			mySSH.command('cp -f /tmp/oai-cn5g-v1.5.pcap .','\$', 30)
 			mySSH.command('zip mme.log.zip oai-amf.log oai-nrf.log oai-cn5g*.pcap','\$', 30)
 			mySSH.command('mv mme.log.zip ' + self.SourceCodePath + '/scripts','\$', 30)
+		elif re.match('OC-OAI-CN5G', self.Type, re.IGNORECASE):
+			mySSH.command('cd ' + self.SourceCodePath + '/logs','\$', 5)
+			mySSH.command('zip mme.log.zip oai-amf.log oai-nrf.log oai-cn5g*.pcap','\$', 30)
+			mySSH.command('mv mme.log.zip ' + self.SourceCodePath + '/scripts','\$', 30)
 		elif re.match('OAI', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			mySSH.command('zip mme.log.zip mme*.log', '\$', 60)
 			mySSH.command('echo ' + self.Password + ' | sudo -S rm mme*.log', '\$', 5)
@@ -849,6 +982,10 @@ class EPCManagement():
 				mySSH.command('docker cp ' + self.containerPrefix + '-oai-spgwu-tiny:/tmp/spgwu_check_run.pcap .', '\$', 60)
 				mySSH.command('zip spgw.log.zip spgw*_check_run.*', '\$', 60)
 		elif re.match('OAICN5G', self.Type, re.IGNORECASE):
+			mySSH.command('cd ' + self.SourceCodePath + '/logs','\$', 5)
+			mySSH.command('zip spgw.log.zip oai-smf.log oai-spgwu.log','\$', 30)
+			mySSH.command('mv spgw.log.zip ' + self.SourceCodePath + '/scripts','\$', 30)
+		elif re.match('OC-OAI-CN5G', self.Type, re.IGNORECASE):
 			mySSH.command('cd ' + self.SourceCodePath + '/logs','\$', 5)
 			mySSH.command('zip spgw.log.zip oai-smf.log oai-spgwu.log','\$', 30)
 			mySSH.command('mv spgw.log.zip ' + self.SourceCodePath + '/scripts','\$', 30)

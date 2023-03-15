@@ -31,8 +31,8 @@
 #-----------------------------------------------------------
 # Import
 #-----------------------------------------------------------
-import sys              # arg
-import re               # reg
+import sys	      # arg
+import re	       # reg
 import logging
 import os
 import shutil
@@ -383,7 +383,7 @@ class Containerize():
 	
 		CreateWorkspace(cmd, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
 
- 		# if asterix, copy the entitlement and subscription manager configurations
+		# if asterix, copy the entitlement and subscription manager configurations
 		if self.host == 'Red Hat':
 			cmd.run('mkdir -p ./etc-pki-entitlement ./rhsm-conf ./rhsm-ca')
 			cmd.run('cp /etc/rhsm/rhsm.conf ./rhsm-conf/')
@@ -841,29 +841,35 @@ class Containerize():
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 
-		CreateWorkspace(mySSH, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
+		#CreateWorkspace(mySSH, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
+		if re.search('AW2S', lSourcePath):
+			mySSH.command('cd ' + lSourcePath + '/openairinterface5g/ci-scripts/yaml_files/sa_aw2s_gnb', '\$', 5)
+			mySSH.command('cp docker-compose.yml ci-docker-compose.yml', '\$', 5)
+			logging.debug(self.eNBSourceCodePath)
+			mySSH.command(f'docker compose --file ci-docker-compose.yml up -d', '\$', 30)
+			result = re.search(r'Container\s+(?P<container_name>\S+)', mySSH.getBefore())
+		else:
+			mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
+			mySSH.command('cp docker-compose.yml ci-docker-compose.yml', '\$', 5)
+			logging.debug(self.eNBSourceCodePath)
+			imagesList = ['oai-enb', 'oai-gnb', 'oai-nr-cuup']
+			for image in imagesList:
+				imageToUse = self.ImageTagToUse(image)
+				mySSH.command(f'sed -i -e "s#image: {image}:latest#image: {imageToUse}#" ci-docker-compose.yml', '\$', 2)
+			localMmeIpAddr = EPC.MmeIPAddress
+			mySSH.command('sed -i -e "s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/" ci-docker-compose.yml', '\$', 2)
+			# Currently support only one
+			svcName = self.services[self.eNB_instance]
+			if svcName == '':
+				logging.warning('no service name given: starting all services in ci-docker-compose.yml!')
 
-		mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
-		mySSH.command('cp docker-compose.yml ci-docker-compose.yml', '\$', 5)
-		imagesList = ['oai-enb', 'oai-gnb', 'oai-nr-cuup']
-		for image in imagesList:
-			imageToUse = self.ImageTagToUse(image)
-			mySSH.command(f'sed -i -e "s#image: {image}:latest#image: {imageToUse}#" ci-docker-compose.yml', '\$', 2)
-		localMmeIpAddr = EPC.MmeIPAddress
-		mySSH.command('sed -i -e "s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/" ci-docker-compose.yml', '\$', 2)
+			mySSH.command(f'docker-compose --file ci-docker-compose.yml up -d -- {svcName}', '\$', 30)
+			# Checking Status
+			grep = ''
+			if svcName != '': grep = f' | grep -A3 {svcName}'
+			mySSH.command(f'docker-compose --file ci-docker-compose.yml config {grep}', '\$', 5)
+			result = re.search('container_name: (?P<container_name>[a-zA-Z0-9\-\_]+)', mySSH.getBefore())
 
-		# Currently support only one
-		svcName = self.services[self.eNB_instance]
-		if svcName == '':
-			logging.warning('no service name given: starting all services in ci-docker-compose.yml!')
-
-		mySSH.command(f'docker-compose --file ci-docker-compose.yml up -d -- {svcName}', '\$', 30)
-
-		# Checking Status
-		grep = ''
-		if svcName != '': grep = f' | grep -A3 {svcName}'
-		mySSH.command(f'docker-compose --file ci-docker-compose.yml config {grep}', '\$', 5)
-		result = re.search('container_name: (?P<container_name>[a-zA-Z0-9\-\_]+)', mySSH.getBefore())
 		unhealthyNb = 0
 		healthyNb = 0
 		startingNb = 0
