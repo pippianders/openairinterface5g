@@ -12,6 +12,7 @@
 //#define DEBUG_CH_COMP
 //#define DEBUG_RB_EXT
 //#define DEBUG_CH_MAG
+//#define ML_DEBUG
 
 #define INVALID_VALUE 255
 
@@ -1856,6 +1857,9 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                  unsigned char harq_pid)
 {
 
+  // Temporary flag: (true) ML receiver, (false) MMSE receiver
+  bool ml_rx = true;
+
   uint8_t aarx, aatx;
   uint32_t nb_re_pusch, bwp_start_subcarrier;
   int avgs = 0;
@@ -1949,7 +1953,11 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   if (rel15_ul->nrOfLayers == 1) {
     ad_shift = 1 + log2_approx(frame_parms->nb_antennas_rx >> 2);
   } else {
-    ad_shift = -3; // For 2-layers, we are already doing a bit shift in the nr_ulsch_zero_forcing_rx_2layers() function, so we can use more bits
+    if (ml_rx == true) {
+      ad_shift = 3;
+    } else {
+      ad_shift = -3; // For 2-layers, we are already doing a bit shift in the nr_ulsch_mmse_2layers() function, so we can use more bits
+    }
   }
 
   for(uint8_t symbol = rel15_ul->start_symbol_index; symbol < (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols); symbol++) {
@@ -2059,7 +2067,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                              nb_re_pusch);
 
       // Apply MMSE for 2 Tx layers
-      if (rel15_ul->nrOfLayers == 2) {
+      if (ml_rx == false && rel15_ul->nrOfLayers == 2) {
         nr_ulsch_mmse_2layers(frame_parms,
                               gNB->pusch_vars[ulsch_id]->rxdataF_comp,
                               gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
@@ -2109,15 +2117,40 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
       /*--------------------  LLRs computation  -------------------------------------------------------------*/
       /*-----------------------------------------------------------------------------------------------------*/
       start_meas(&gNB->ulsch_llr_stats);
-      for (aatx=0; aatx < rel15_ul->nrOfLayers; aatx++) {
-        nr_ulsch_compute_llr(&gNB->pusch_vars[ulsch_id]->rxdataF_comp[aatx*frame_parms->nb_antennas_rx][symbol * (off + rel15_ul->rb_size * NR_NB_SC_PER_RB)],
-                             gNB->pusch_vars[ulsch_id]->ul_ch_mag0[aatx*frame_parms->nb_antennas_rx],
-                             gNB->pusch_vars[ulsch_id]->ul_ch_magb0[aatx*frame_parms->nb_antennas_rx],
-                             &gNB->pusch_vars[ulsch_id]->llr_layers[aatx][rxdataF_ext_offset * rel15_ul->qam_mod_order],
-                             rel15_ul->rb_size,
-                             gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[symbol],
-                             symbol,
-                             rel15_ul->qam_mod_order);
+      if (ml_rx == false || rel15_ul->nrOfLayers == 1) {
+        for (aatx=0; aatx < rel15_ul->nrOfLayers; aatx++) {
+          nr_ulsch_compute_llr(&gNB->pusch_vars[ulsch_id]->rxdataF_comp[aatx*frame_parms->nb_antennas_rx][symbol * (off + rel15_ul->rb_size * NR_NB_SC_PER_RB)],
+                               gNB->pusch_vars[ulsch_id]->ul_ch_mag0[aatx*frame_parms->nb_antennas_rx],
+                               gNB->pusch_vars[ulsch_id]->ul_ch_magb0[aatx*frame_parms->nb_antennas_rx],
+                               &gNB->pusch_vars[ulsch_id]->llr_layers[aatx][rxdataF_ext_offset * rel15_ul->qam_mod_order],
+                               rel15_ul->rb_size,
+                               gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[symbol],
+                               symbol,
+                               rel15_ul->qam_mod_order);
+        }
+      } else {
+        nr_ulsch_compute_ML_llr(gNB->pusch_vars[ulsch_id]->rxdataF_comp,
+                                gNB->pusch_vars[ulsch_id]->rho,
+                                gNB->pusch_vars[ulsch_id]->llr_layers,
+                                frame_parms->nb_antennas_rx,
+                                rel15_ul->rb_size,
+                                nb_re_pusch,
+                                symbol,
+                                rxdataF_ext_offset,
+                                rel15_ul->qam_mod_order);
+
+#ifdef ML_DEBUG
+        c16_t *llr_layers0 = (c16_t *)&gNB->pusch_vars[ulsch_id]->llr_layers[0][rxdataF_ext_offset * rel15_ul->qam_mod_order];
+        c16_t *llr_layers1 = (c16_t *)&gNB->pusch_vars[ulsch_id]->llr_layers[1][rxdataF_ext_offset * rel15_ul->qam_mod_order];
+        printf("===============================\n");
+        printf("AFTER nr_ulsch_compute_ML_llr()\n");
+        printf("===============================\n");
+        for (int k = 0; k < nb_re_pusch; k++) {
+          printf("[%3i] llr_layers0 = (%6i, %6i), llr_layers1 = (%6i, %6i)\n",
+                 k, llr_layers0[k].r, llr_layers0[k].i, llr_layers1[k].r, llr_layers1[k].i);
+        }
+        printf("\n");
+#endif
       }
       stop_meas(&gNB->ulsch_llr_stats);
       rxdataF_ext_offset += gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[symbol];

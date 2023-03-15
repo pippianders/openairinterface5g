@@ -391,3 +391,231 @@ void nr_ulsch_compute_llr(int32_t *rxdataF_comp,
       break;
   }
 }
+
+
+void nr_ulsch_qpsk_qpsk(short *stream0_in, short *stream1_in, short *stream0_out, short *rho01, int length)
+{
+/*
+This function computes the LLRs of stream 0 (s_0) in presence of the interfering stream 1 (s_1) assuming that both symbols are QPSK. It can be used for both MU-MIMO interference-aware receiver or
+for SU-MIMO receivers.
+
+Parameters:
+  stream0_in = Matched filter output y0' = (h0*g0)*y0
+  stream1_in = Matched filter output y1' = (h0*g1)*y0
+  stream0_out = LLRs
+  rho01 = Correlation between the two effective channels \rho_{10} = (h1*g1)*(h0*g0)
+  length = number of resource elements
+*/
+
+#if defined(__x86_64__) || defined(__i386)
+  __m128i A __attribute__((aligned(16)));
+  __m128i B __attribute__((aligned(16)));
+  __m128i C __attribute__((aligned(16)));
+  __m128i D __attribute__((aligned(16)));
+  __m128i E __attribute__((aligned(16)));
+  __m128i F __attribute__((aligned(16)));
+  __m128i G __attribute__((aligned(16)));
+  __m128i H __attribute__((aligned(16)));
+
+#endif
+
+#if defined(__x86_64__) || defined(__i386__)
+  __m128i *rho01_128i = (__m128i *)rho01;
+  __m128i *stream0_128i_in = (__m128i *)stream0_in;
+  __m128i *stream1_128i_in = (__m128i *)stream1_in;
+  __m128i *stream0_128i_out = (__m128i *)stream0_out;
+  __m128i ONE_OVER_SQRT_8 = _mm_set1_epi16(23170); // round(2^16/sqrt(8))
+#elif defined(__arm__) || defined(__aarch64__)
+                                                                                          int16x8_t *rho01_128i = (int16x8_t *)rho01;
+  int16x8_t *stream0_128i_in = (int16x8_t *)stream0_in;
+  int16x8_t *stream1_128i_in = (int16x8_t *)stream1_in;
+  int16x8_t *stream0_128i_out = (int16x8_t *)stream0_out;
+  int16x8_t ONE_OVER_SQRT_8 = vdupq_n_s16(23170); // round(2^16/sqrt(8))
+#endif
+
+  int i;
+
+  for (i = 0; i < length >> 2; i += 2) {
+// in each iteration, we take 8 complex samples
+#if defined(__x86_64__) || defined(__i386__)
+    __m128i xmm0 = rho01_128i[i]; // 4 symbols
+    __m128i xmm1 = rho01_128i[i + 1];
+
+    // put (rho_r + rho_i)/2sqrt2 in rho_rpi
+    // put (rho_r - rho_i)/2sqrt2 in rho_rmi
+
+    xmm0 = _mm_shufflelo_epi16(xmm0, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm0 = _mm_shufflehi_epi16(xmm0, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm0 = _mm_shuffle_epi32(xmm0, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm1 = _mm_shufflelo_epi16(xmm1, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm1 = _mm_shufflehi_epi16(xmm1, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm1 = _mm_shuffle_epi32(xmm1, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+    // xmm0 = [Re(0,1) Re(2,3) Im(0,1) Im(2,3)]
+    // xmm1 = [Re(4,5) Re(6,7) Im(4,5) Im(6,7)]
+    __m128i xmm2 = _mm_unpacklo_epi64(xmm0, xmm1); // Re(rho)
+    __m128i xmm3 = _mm_unpackhi_epi64(xmm0, xmm1); // Im(rho)
+    __m128i rho_rpi = _mm_adds_epi16(xmm2, xmm3); // rho = Re(rho) + Im(rho)
+    __m128i rho_rmi = _mm_subs_epi16(xmm2, xmm3); // rho* = Re(rho) - Im(rho)
+
+    // divide by sqrt(8), no shift needed ONE_OVER_SQRT_8 = Q1.16
+    rho_rpi = _mm_mulhi_epi16(rho_rpi, ONE_OVER_SQRT_8);
+    rho_rmi = _mm_mulhi_epi16(rho_rmi, ONE_OVER_SQRT_8);
+#elif defined(__arm__) || defined(__aarch64__)
+
+#endif
+// Compute LLR for first bit of stream 0
+
+// Compute real and imaginary parts of MF output for stream 0
+#if defined(__x86_64__) || defined(__i386__)
+    xmm0 = stream0_128i_in[i];
+    xmm1 = stream0_128i_in[i + 1];
+
+    xmm0 = _mm_shufflelo_epi16(xmm0, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm0 = _mm_shufflehi_epi16(xmm0, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm0 = _mm_shuffle_epi32(xmm0, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm1 = _mm_shufflelo_epi16(xmm1, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm1 = _mm_shufflehi_epi16(xmm1, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm1 = _mm_shuffle_epi32(xmm1, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+    // xmm0 = [Re(0,1) Re(2,3) Im(0,1) Im(2,3)]
+    // xmm1 = [Re(4,5) Re(6,7) Im(4,5) Im(6,7)]
+    __m128i y0r = _mm_unpacklo_epi64(xmm0, xmm1); // = [y0r(1),y0r(2),y0r(3),y0r(4)]
+    __m128i y0i = _mm_unpackhi_epi64(xmm0, xmm1);
+
+    __m128i y0r_over2 = _mm_srai_epi16(y0r, 1); // divide by 2
+    __m128i y0i_over2 = _mm_srai_epi16(y0i, 1); // divide by 2
+#elif defined(__arm__) || defined(__aarch64__)
+
+#endif
+// Compute real and imaginary parts of MF output for stream 1
+#if defined(__x86_64__) || defined(__i386__)
+    xmm0 = stream1_128i_in[i];
+    xmm1 = stream1_128i_in[i + 1];
+
+    xmm0 = _mm_shufflelo_epi16(xmm0, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm0 = _mm_shufflehi_epi16(xmm0, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm0 = _mm_shuffle_epi32(xmm0, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm1 = _mm_shufflelo_epi16(xmm1, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm1 = _mm_shufflehi_epi16(xmm1, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+    xmm1 = _mm_shuffle_epi32(xmm1, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+    // xmm0 = [Re(0,1) Re(2,3) Im(0,1) Im(2,3)]
+    // xmm1 = [Re(4,5) Re(6,7) Im(4,5) Im(6,7)]
+    __m128i y1r = _mm_unpacklo_epi64(xmm0, xmm1); //[y1r(1),y1r(2),y1r(3),y1r(4)]
+    __m128i y1i = _mm_unpackhi_epi64(xmm0, xmm1); //[y1i(1),y1i(2),y1i(3),y1i(4)]
+
+    __m128i y1r_over2 = _mm_srai_epi16(y1r, 1); // divide by 2
+    __m128i y1i_over2 = _mm_srai_epi16(y1i, 1); // divide by 2
+
+    // Compute the terms for the LLR of first bit
+
+    xmm0 = _mm_setzero_si128(); // ZERO
+
+    // 1 term for numerator of LLR
+    xmm3 = _mm_subs_epi16(y1r_over2, rho_rpi);
+    A = _mm_abs_epi16(xmm3); // A = |y1r/2 - rho/sqrt(8)|
+    xmm2 = _mm_adds_epi16(A, y0i_over2); // = |y1r/2 - rho/sqrt(8)| + y0i/2
+    xmm3 = _mm_subs_epi16(y1i_over2, rho_rmi);
+    B = _mm_abs_epi16(xmm3); // B = |y1i/2 - rho*/sqrt(8)|
+    __m128i logmax_num_re0 = _mm_adds_epi16(B, xmm2); // = |y1r/2 - rho/sqrt(8)|+|y1i/2 - rho*/sqrt(8)| + y0i/2
+
+    // 2 term for numerator of LLR
+    xmm3 = _mm_subs_epi16(y1r_over2, rho_rmi);
+    C = _mm_abs_epi16(xmm3); // C = |y1r/2 - rho*/4|
+    xmm2 = _mm_subs_epi16(C, y0i_over2); // = |y1r/2 - rho*/4| - y0i/2
+    xmm3 = _mm_adds_epi16(y1i_over2, rho_rpi);
+    D = _mm_abs_epi16(xmm3); // D = |y1i/2 + rho/4|
+    xmm2 = _mm_adds_epi16(xmm2, D); // |y1r/2 - rho*/4| + |y1i/2 + rho/4| - y0i/2
+    logmax_num_re0 = _mm_max_epi16(logmax_num_re0, xmm2); // max, numerator done
+
+    // 1 term for denominator of LLR
+    xmm3 = _mm_adds_epi16(y1r_over2, rho_rmi);
+    E = _mm_abs_epi16(xmm3); // E = |y1r/2 + rho*/4|
+    xmm2 = _mm_adds_epi16(E, y0i_over2); // = |y1r/2 + rho*/4| + y0i/2
+    xmm3 = _mm_subs_epi16(y1i_over2, rho_rpi);
+    F = _mm_abs_epi16(xmm3); // F = |y1i/2 - rho/4|
+    __m128i logmax_den_re0 = _mm_adds_epi16(F, xmm2); // = |y1r/2 + rho*/4| + |y1i/2 - rho/4| + y0i/2
+
+    // 2 term for denominator of LLR
+    xmm3 = _mm_adds_epi16(y1r_over2, rho_rpi);
+    G = _mm_abs_epi16(xmm3); // G = |y1r/2 + rho/4|
+    xmm2 = _mm_subs_epi16(G, y0i_over2); // = |y1r/2 + rho/4| - y0i/2
+    xmm3 = _mm_adds_epi16(y1i_over2, rho_rmi);
+    H = _mm_abs_epi16(xmm3); // H = |y1i/2 + rho*/4|
+    xmm2 = _mm_adds_epi16(xmm2, H); // = |y1r/2 + rho/4| + |y1i/2 + rho*/4| - y0i/2
+    logmax_den_re0 = _mm_max_epi16(logmax_den_re0, xmm2); // max, denominator done
+
+    // Compute the terms for the LLR of first bit
+
+    // 1 term for nominator of LLR
+    xmm2 = _mm_adds_epi16(A, y0r_over2);
+    __m128i logmax_num_im0 = _mm_adds_epi16(B, xmm2); // = |y1r/2 - rho/4| + |y1i/2 - rho*/4| + y0r/2
+
+    // 2 term for nominator of LLR
+    xmm2 = _mm_subs_epi16(E, y0r_over2);
+    xmm2 = _mm_adds_epi16(xmm2, F); // = |y1r/2 + rho*/4| + |y1i/2 - rho/4| - y0r/2
+
+    logmax_num_im0 = _mm_max_epi16(logmax_num_im0, xmm2); // max, nominator done
+
+    // 1 term for denominator of LLR
+    xmm2 = _mm_adds_epi16(C, y0r_over2);
+    __m128i logmax_den_im0 = _mm_adds_epi16(D, xmm2); // = |y1r/2 - rho*/4| + |y1i/2 + rho/4| - y0r/2
+
+    xmm2 = _mm_subs_epi16(G, y0r_over2);
+    xmm2 = _mm_adds_epi16(xmm2, H); // = |y1r/2 + rho/4| + |y1i/2 + rho*/4| - y0r/2
+
+    logmax_den_im0 = _mm_max_epi16(logmax_den_im0, xmm2); // max, denominator done
+
+    // LLR of first bit [L1(1), L1(2), L1(3), L1(4)]
+    y0r = _mm_adds_epi16(y0r, logmax_num_re0);
+    y0r = _mm_subs_epi16(y0r, logmax_den_re0);
+
+    // LLR of second bit [L2(1), L2(2), L2(3), L2(4)]
+    y0i = _mm_adds_epi16(y0i, logmax_num_im0);
+    y0i = _mm_subs_epi16(y0i, logmax_den_im0);
+
+    _mm_storeu_si128(&stream0_128i_out[i], _mm_unpacklo_epi16(y0r, y0i)); // = [L1(1), L2(1), L1(2), L2(2)]
+
+    if (i < ((length >> 1) - 1)) // false if only 2 REs remain
+      _mm_storeu_si128(&stream0_128i_out[i + 1], _mm_unpackhi_epi16(y0r, y0i));
+
+#elif defined(__x86_64__)
+
+#endif
+  }
+
+#if defined(__x86_64__) || defined(__i386__)
+  _mm_empty();
+  _m_empty();
+#endif
+}
+
+
+void nr_ulsch_compute_ML_llr(int32_t **rxdataF_comp,
+                             int32_t ***rho,
+                             int16_t **llr_layers,
+                             uint8_t nb_antennas_rx,
+                             uint32_t rb_size,
+                             uint32_t nb_re,
+                             uint8_t symbol,
+                             uint32_t rxdataF_ext_offset,
+                             uint8_t mod_order)
+{
+  int off = ((rb_size & 1) == 1) ? 4 : 0;
+  c16_t *rxdataF_comp0 = (c16_t *)&rxdataF_comp[0][symbol * (off + (rb_size * NR_NB_SC_PER_RB))];
+  c16_t *rxdataF_comp1 = (c16_t *)&rxdataF_comp[nb_antennas_rx][symbol * (off + (rb_size * NR_NB_SC_PER_RB))];
+  c16_t *llr_layers0 = (c16_t *)&llr_layers[0][rxdataF_ext_offset * mod_order];
+  c16_t *llr_layers1 = (c16_t *)&llr_layers[1][rxdataF_ext_offset * mod_order];
+  c16_t *rho0 = (c16_t *)&rho[0][1][symbol * (off + (rb_size * NR_NB_SC_PER_RB))];
+  c16_t *rho1 = (c16_t *)&rho[0][2][symbol * (off + (rb_size * NR_NB_SC_PER_RB))];
+
+  switch (mod_order) {
+    case 2:
+      nr_ulsch_qpsk_qpsk((short *)rxdataF_comp0, (short *)rxdataF_comp1, (short *)llr_layers0, (short *)rho0, nb_re);
+      nr_ulsch_qpsk_qpsk((short *)rxdataF_comp1, (short *)rxdataF_comp0, (short *)llr_layers1, (short *)rho1, nb_re);
+      break;
+    case 4:
+    case 6:
+      AssertFatal(1 == 0, "LLR computation is not implemented yet for ML with Qm = %d\n", mod_order);
+    default:
+      AssertFatal(1 == 0, "nr_ulsch_compute_llr: invalid Qm value, symbol = %d, Qm = %d\n", symbol, mod_order);
+  }
+}

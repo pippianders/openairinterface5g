@@ -269,6 +269,16 @@ void nr_ulsch_compute_llr(int32_t *rxdataF_comp,
                           uint8_t  symbol,
                           uint8_t  mod_order);
 
+void nr_ulsch_compute_ML_llr(int32_t **rxdataF_comp,
+                             int32_t ***rho,
+                             int16_t **llr_layers,
+                             uint8_t nb_antennas_rx,
+                             uint32_t rb_size,
+                             uint32_t nb_re,
+                             uint8_t symbol,
+                             uint32_t rxdataF_ext_offset,
+                             uint8_t mod_order);
+
 void nr_fill_ulsch(PHY_VARS_gNB *gNB,
                    int frame,
                    int slot,
