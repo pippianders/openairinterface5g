@@ -83,9 +83,12 @@ typedef enum {
 /* global parameters, not under a specific section   */
 #define GNB_CONFIG_STRING_ASN1_VERBOSITY                   "Asn1_verbosity"
 #define GNB_CONFIG_STRING_ACTIVE_GNBS                      "Active_gNBs"
+
+/** global parameter for virtual time */
+#define GNB_CONFIG_STRING_VIRTUAL_TIME "virtual_time"
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            global configuration parameters                                                                                   */
-/*   optname                                   helpstr   paramflags    XXXptr        defXXXval                                        type           numelt     */
+/*                                            global configuration parameters */
+/*   optname                                   helpstr   paramflags    XXXptr        defXXXval type           numelt     */
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define GNBSPARAMS_DESC {                                                                                             \
 {GNB_CONFIG_STRING_ASN1_VERBOSITY,             NULL,     0,       .uptr=NULL,   .defstrval=GNB_CONFIG_STRING_ASN1_VERBOSITY_NONE,   TYPE_STRING,      0},   \
@@ -94,6 +97,7 @@ typedef enum {
 
 #define GNB_ASN1_VERBOSITY_IDX                     0
 #define GNB_ACTIVE_GNBS_IDX                        1
+#define GNB_VT_IDX 2
 
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
 /*------------------------------------------------------------------------------------------------------------------------------------------*/

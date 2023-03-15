@@ -259,6 +259,9 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
   int last_sfn_slot = -1;
   uint16_t sfn_slot = 0;
 
+  nfapi_ue_slot_indication_vt_t vt_ue_slot_ind;
+  memset(&vt_ue_slot_ind, 0, sizeof(nfapi_ue_slot_indication_vt_t));
+
   module_id_t mod_id = 0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   for (int i = 0; i < NR_MAX_HARQ_PROCESSES; i++) {
@@ -305,6 +308,8 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     }
     if (mac->scc == NULL && mac->scc_SIB == NULL) {
       LOG_D(MAC, "[NSA] mac->scc == NULL and [SA] mac->scc_SIB == NULL!\n");
+      if (get_softmodem_params()->virtual_time)
+        send_vt_slot_ack(&vt_ue_slot_ind, sfn_slot);
       continue;
     }
 
@@ -363,6 +368,8 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       pdcp_run(&ctxt);
     }
     process_queued_nr_nfapi_msgs(mac, sfn_slot);
+    if (get_softmodem_params()->virtual_time)
+      send_vt_slot_ack(&vt_ue_slot_ind, sfn_slot);
   }
   return NULL;
 }
