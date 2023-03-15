@@ -49,6 +49,10 @@
 #define SSE_INTRIN_H
 
 
+#if defined(__x86_64) || defined(__i386__)
+
+/* x86 processors */
+
 #include <simde/x86/mmx.h>
 #include <simde/x86/sse.h>
 #include <simde/x86/sse2.h>
@@ -58,9 +62,6 @@
 #include <simde/x86/sse4.2.h>
 #include <simde/x86/avx2.h>
 #include <simde/x86/fma.h>
-#if defined(__x86_64) || defined(__i386__)
-
-/* x86 processors */
 
 #if defined(__AVX512BW__) || defined(__AVX512F__)
 #include <immintrin.h>
@@ -73,9 +74,8 @@
 #include <simde/x86/clmul.h>
 
 #include <simde/arm/neon.h>
-#include <stdbool.h>
-#define _MM_SHUFFLE(z, y, x, w) (((z) << 6) | ((y) << 4) | ((x) << 2) | (w))
 #endif // x86_64 || i386
+#include <stdbool.h>
 #include "assertions.h"
 
 /*
