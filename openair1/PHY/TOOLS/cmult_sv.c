@@ -52,11 +52,7 @@ void multadd_complex_vector_real_scalar(int16_t *x,
 
 }
 
-
-void multadd_real_vector_complex_scalar(int16_t *x,
-                                        int16_t *alpha,
-                                        int16_t *y,
-                                        uint32_t N)
+void multadd_real_vector_complex_scalar(const int16_t *x, int16_t *alpha, int16_t *y, uint32_t N)
 {
 
   uint32_t i;

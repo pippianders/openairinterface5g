@@ -22,11 +22,11 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
 // ----- Old implementation ----
-uint8_t **crc24c_generator_matrix(uint16_t payloadSizeBits){
-
-	uint8_t crcPolynomialPattern[25] = {1,1,0,1,1,0,0,1,0,1,0,1,1,0,0,0,1,0,0,0,1,0,1,1,1};
-	// 1011 0010 1011 0001 0001 0111 D^24 + D^23 + D^21 + D^20 + D^17 + D^15 + D^13 + D^12 + D^8 + D^4 + D^2 + D + 1
-	uint8_t crcPolynomialSize = 24;
+const uint8_t **crc24c_generator_matrix(uint16_t payloadSizeBits)
+{
+  uint8_t crcPolynomialPattern[25] = {1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1};
+  // 1011 0010 1011 0001 0001 0111 D^24 + D^23 + D^21 + D^20 + D^17 + D^15 + D^13 + D^12 + D^8 + D^4 + D^2 + D + 1
+  uint8_t crcPolynomialSize = 24;
 	uint8_t temp1[crcPolynomialSize], temp2[crcPolynomialSize];
 
 	uint8_t **crc_generator_matrix = malloc(payloadSizeBits*sizeof(uint8_t *) + payloadSizeBits*crcPolynomialSize*sizeof(uint8_t));
@@ -52,7 +52,7 @@ uint8_t **crc24c_generator_matrix(uint16_t payloadSizeBits){
 				crc_generator_matrix[i][j]=0;
 		}
 	}
-	return crc_generator_matrix;
+  return (const uint8_t **)crc_generator_matrix;
 }
 
 uint8_t **crc11_generator_matrix(uint16_t payloadSizeBits){

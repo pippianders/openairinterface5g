@@ -44,18 +44,19 @@
 /*ref 36-212 v8.6.0 , pp 8-9 */
 /* the highest degree is set by default */
 
-unsigned int             poly24a = 0x864cfb00;   // 1000 0110 0100 1100 1111 1011
-												 // D^24 + D^23 + D^18 + D^17 + D^14 + D^11 + D^10 + D^7 + D^6 + D^5 + D^4 + D^3 + D + 1
-unsigned int             poly24b = 0x80006300;   // 1000 0000 0000 0000 0110 0011
-											     // D^24 + D^23 + D^6 + D^5 + D + 1
-unsigned int             poly24c = 0xb2b11700;   // 1011 0010 1011 0001 0001 0111
-												 // D^24+D^23+D^21+D^20+D^17+D^15+D^13+D^12+D^8+D^4+D^2+D+1
+static const unsigned int poly24a =
+    0x864cfb00; // 1000 0110 0100 1100 1111 1011
+                // D^24 + D^23 + D^18 + D^17 + D^14 + D^11 + D^10 + D^7 + D^6 + D^5 + D^4 + D^3 + D + 1
+static const unsigned int poly24b = 0x80006300; // 1000 0000 0000 0000 0110 0011
+                                                // D^24 + D^23 + D^6 + D^5 + D + 1
+static const unsigned int poly24c = 0xb2b11700; // 1011 0010 1011 0001 0001 0111
+                                                // D^24+D^23+D^21+D^20+D^17+D^15+D^13+D^12+D^8+D^4+D^2+D+1
 
-unsigned int             poly16 = 0x10210000;    // 0001 0000 0010 0001            D^16 + D^12 + D^5 + 1
-unsigned int             poly12 = 0x80F00000;    // 1000 0000 1111                 D^12 + D^11 + D^3 + D^2 + D + 1
-unsigned int             poly8 = 0x9B000000;     // 1001 1011                      D^8  + D^7  + D^4 + D^3 + D + 1
-uint32_t poly6 = 0x84000000; // 10000100000... -> D^6+D^5+1
-uint32_t poly11 = 0xc4200000; //11000100001000... -> D^11+D^10+D^9+D^5+1
+static const unsigned int poly16 = 0x10210000; // 0001 0000 0010 0001            D^16 + D^12 + D^5 + 1
+static const unsigned int poly12 = 0x80F00000; // 1000 0000 1111                 D^12 + D^11 + D^3 + D^2 + D + 1
+static const unsigned int poly8 = 0x9B000000; // 1001 1011                      D^8  + D^7  + D^4 + D^3 + D + 1
+static const uint32_t poly6 = 0x84000000; // 10000100000... -> D^6+D^5+1
+static const uint32_t poly11 = 0xc4200000; // 11000100001000... -> D^11+D^10+D^9+D^5+1
 
 /*********************************************************
 
@@ -102,13 +103,13 @@ static unsigned char       crc8Table[256];
 static unsigned char       crc6Table[256];
 
 #if USE_INTEL_CRC
-static DECLARE_ALIGNED(struct crc_pclmulqdq_ctx lte_crc24a_pclmulqdq, 16) = {
-        0x64e4d700,     /**< k1 */
-        0x2c8c9d00,     /**< k2 */
-        0xd9fe8c00,     /**< k3 */
-        0xf845fe24,     /**< q */
-        0x864cfb00,     /**< p */
-        0ULL            /**< res */
+static DECLARE_ALIGNED(const struct crc_pclmulqdq_ctx lte_crc24a_pclmulqdq, 16) = {
+    0x64e4d700, /**< k1 */
+    0x2c8c9d00, /**< k2 */
+    0xd9fe8c00, /**< k3 */
+    0xf845fe24, /**< q */
+    0x864cfb00, /**< p */
+    0ULL /**< res */
 };
 __m128i crc_xmm_be_le_swap128;
 
@@ -179,13 +180,13 @@ unsigned int crc24a (unsigned char * inptr,
 }
 
 #if USE_INTEL_CRC
-static DECLARE_ALIGNED(struct crc_pclmulqdq_ctx lte_crc24b_pclmulqdq, 16) = {
-        0x80140500,     /**< k1 */
-        0x42000100,     /**< k2 */
-        0x90042100,     /**< k3 */
-        0xffff83ff,     /**< q */
-        0x80006300,     /**< p */
-        0ULL            /**< res */
+static DECLARE_ALIGNED(const struct crc_pclmulqdq_ctx lte_crc24b_pclmulqdq, 16) = {
+    0x80140500, /**< k1 */
+    0x42000100, /**< k2 */
+    0x90042100, /**< k3 */
+    0xffff83ff, /**< q */
+    0x80006300, /**< p */
+    0ULL /**< res */
 };
 #endif
 unsigned int crc24b (unsigned char * inptr,

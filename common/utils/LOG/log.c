@@ -76,22 +76,22 @@ mapping log_level_names[] = {
   {NULL, -1}
 };
 
-mapping log_options[] = {
-  {"nocolor", FLAG_NOCOLOR  },
-  {"level",   FLAG_LEVEL  },
-  {"thread",  FLAG_THREAD },
-  {"line_num",    FLAG_FILE_LINE },
-  {"function", FLAG_FUNCT},
-  {"time",     FLAG_TIME},
-  {"thread_id", FLAG_THREAD_ID},
-  {"wall_clock", FLAG_REAL_TIME},
-  {NULL,-1}
-};
+static const mapping log_options[] = {{"nocolor", FLAG_NOCOLOR},
+                                      {"level", FLAG_LEVEL},
+                                      {"thread", FLAG_THREAD},
+                                      {"line_num", FLAG_FILE_LINE},
+                                      {"function", FLAG_FUNCT},
+                                      {"time", FLAG_TIME},
+                                      {"thread_id", FLAG_THREAD_ID},
+                                      {"wall_clock", FLAG_REAL_TIME},
+                                      {NULL, -1}};
 
 mapping log_maskmap[] = LOG_MASKMAP_INIT;
 
-char *log_level_highlight_start[] = {LOG_RED, LOG_ORANGE, LOG_GREEN, "", LOG_BLUE, LOG_CYBL};  /*!< \brief Optional start-format strings for highlighting */
-char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET};   /*!< \brief Optional end-format strings for highlighting */
+static const char *log_level_highlight_start[] =
+    {LOG_RED, LOG_ORANGE, LOG_GREEN, "", LOG_BLUE, LOG_CYBL}; /*!< \brief Optional start-format strings for highlighting */
+static const char *log_level_highlight_end[] =
+    {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET}; /*!< \brief Optional end-format strings for highlighting */
 static void log_output_memory(log_component_t *c, const char *file, const char *func, int line, int comp, int level, const char* format,va_list args);
 
 

@@ -105,68 +105,69 @@ int ngap_gNB_handle_ng_ENDC_pdusession_modification_confirm(uint32_t            
     NGAP_NGAP_PDU_t       *pdu);
 
 /* Handlers matrix. Only gNB related procedure present here */
-ngap_message_decoded_callback ngap_messages_callback[][3] = {
-  { 0, 0, 0 }, /* AMFConfigurationUpdate */
-  { 0, 0, 0 }, /* AMFStatusIndication */
-  { 0, 0, 0 }, /* CellTrafficTrace */
-  { ngap_gNB_handle_deactivate_trace, 0, 0 }, /* DeactivateTrace */
-  { ngap_gNB_handle_nas_downlink, 0, 0 }, /* DownlinkNASTransport */
-  { 0, 0, 0 }, /* DownlinkNonUEAssociatedNRPPaTransport */
-  { 0, 0, 0 }, /* DownlinkRANConfigurationTransfer */
-  { 0, 0, 0 }, /* DownlinkRANStatusTransfer */
-  { 0, 0, 0 }, /* DownlinkUEAssociatedNRPPaTransport */
-  { ngap_gNB_handle_error_indication, 0, 0 }, /* ErrorIndication */
-  { 0, 0, 0 }, /* HandoverCancel */
-  { 0, 0, 0 }, /* HandoverNotification */
-  { 0, 0, 0 }, /* HandoverPreparation */
-  { 0, 0, 0 }, /* HandoverResourceAllocation */
-  { ngap_gNB_handle_initial_context_request, 0, 0 }, /* InitialContextSetup */
-  { 0, 0, 0 }, /* InitialUEMessage */
-  { 0, 0, 0 }, /* LocationReportingControl */
-  { 0, 0, 0 }, /* LocationReportingFailureIndication */
-  { 0, 0, 0 }, /* LocationReport */
-  { 0, 0, 0 }, /* NASNonDeliveryIndication */
-  { 0, 0, 0 }, /* NGReset */
-  { 0, ngap_gNB_handle_ng_setup_response, ngap_gNB_handle_ng_setup_failure }, /* NGSetup */
-  { 0, 0, 0 }, /* OverloadStart */
-  { 0, 0, 0 }, /* OverloadStop */
-  { ngap_gNB_handle_paging, 0, 0 }, /* Paging */
-  { 0, ngap_gNB_handle_ng_path_switch_request_ack, ngap_gNB_handle_ng_path_switch_request_failure }, /* PathSwitchRequest */
-  { ngap_gNB_handle_pdusession_modify_request, 0, 0 }, /* PDUSessionResourceModify */
-  { 0, ngap_gNB_handle_ng_ENDC_pdusession_modification_confirm, 0 }, /* PDUSessionResourceModifyIndication */
-  { ngap_gNB_handle_pdusession_release_command, 0, 0 }, /* PDUSessionResourceRelease */
-  { ngap_gNB_handle_pdusession_setup_request, 0, 0 }, /* PDUSessionResourceSetup */
-  { 0, 0, 0 }, /* PDUSessionResourceNotify */
-  { 0, 0, 0 }, /* PrivateMessage */
-  { 0, 0, 0 }, /* PWSCancel */
-  { 0, 0, 0 }, /* PWSFailureIndication */
-  { 0, 0, 0 }, /* PWSRestartIndication */
-  { 0, 0, 0 }, /* RANConfigurationUpdate */
-  { 0, 0, 0 }, /* RerouteNASRequest */
-  { 0, 0, 0 }, /* RRCInactiveTransitionReport */
-  { 0, 0, 0 }, /* TraceFailureIndication */
-  { ngap_gNB_handle_trace_start, 0, 0 }, /* TraceStart */
-  { 0, 0, 0 }, /* UEContextModification */
-  { ngap_gNB_handle_ue_context_release_command, 0, 0 }, /* UEContextRelease */
-  { 0, 0, 0 }, /* UEContextReleaseRequest */
-  { 0, 0, 0 }, /* UERadioCapabilityCheck */
-  { 0, 0, 0 }, /* UERadioCapabilityInfoIndication */
-  { 0, 0, 0 }, /* UETNLABindingRelease */
-  { 0, 0, 0 }, /* UplinkNASTransport */
-  { 0, 0, 0 }, /* UplinkNonUEAssociatedNRPPaTransport */
-  { 0, 0, 0 }, /* UplinkRANConfigurationTransfer */
-  { 0, 0, 0 }, /* UplinkRANStatusTransfer */
-  { 0, 0, 0 }, /* UplinkUEAssociatedNRPPaTransport */
-  { 0, 0, 0 }, /* WriteReplaceWarning */
-  { 0, 0, 0 }, /* SecondaryRATDataUsageReport */
+static const ngap_message_decoded_callback ngap_messages_callback[][3] = {
+    {0, 0, 0}, /* AMFConfigurationUpdate */
+    {0, 0, 0}, /* AMFStatusIndication */
+    {0, 0, 0}, /* CellTrafficTrace */
+    {ngap_gNB_handle_deactivate_trace, 0, 0}, /* DeactivateTrace */
+    {ngap_gNB_handle_nas_downlink, 0, 0}, /* DownlinkNASTransport */
+    {0, 0, 0}, /* DownlinkNonUEAssociatedNRPPaTransport */
+    {0, 0, 0}, /* DownlinkRANConfigurationTransfer */
+    {0, 0, 0}, /* DownlinkRANStatusTransfer */
+    {0, 0, 0}, /* DownlinkUEAssociatedNRPPaTransport */
+    {ngap_gNB_handle_error_indication, 0, 0}, /* ErrorIndication */
+    {0, 0, 0}, /* HandoverCancel */
+    {0, 0, 0}, /* HandoverNotification */
+    {0, 0, 0}, /* HandoverPreparation */
+    {0, 0, 0}, /* HandoverResourceAllocation */
+    {ngap_gNB_handle_initial_context_request, 0, 0}, /* InitialContextSetup */
+    {0, 0, 0}, /* InitialUEMessage */
+    {0, 0, 0}, /* LocationReportingControl */
+    {0, 0, 0}, /* LocationReportingFailureIndication */
+    {0, 0, 0}, /* LocationReport */
+    {0, 0, 0}, /* NASNonDeliveryIndication */
+    {0, 0, 0}, /* NGReset */
+    {0, ngap_gNB_handle_ng_setup_response, ngap_gNB_handle_ng_setup_failure}, /* NGSetup */
+    {0, 0, 0}, /* OverloadStart */
+    {0, 0, 0}, /* OverloadStop */
+    {ngap_gNB_handle_paging, 0, 0}, /* Paging */
+    {0, ngap_gNB_handle_ng_path_switch_request_ack, ngap_gNB_handle_ng_path_switch_request_failure}, /* PathSwitchRequest */
+    {ngap_gNB_handle_pdusession_modify_request, 0, 0}, /* PDUSessionResourceModify */
+    {0, ngap_gNB_handle_ng_ENDC_pdusession_modification_confirm, 0}, /* PDUSessionResourceModifyIndication */
+    {ngap_gNB_handle_pdusession_release_command, 0, 0}, /* PDUSessionResourceRelease */
+    {ngap_gNB_handle_pdusession_setup_request, 0, 0}, /* PDUSessionResourceSetup */
+    {0, 0, 0}, /* PDUSessionResourceNotify */
+    {0, 0, 0}, /* PrivateMessage */
+    {0, 0, 0}, /* PWSCancel */
+    {0, 0, 0}, /* PWSFailureIndication */
+    {0, 0, 0}, /* PWSRestartIndication */
+    {0, 0, 0}, /* RANConfigurationUpdate */
+    {0, 0, 0}, /* RerouteNASRequest */
+    {0, 0, 0}, /* RRCInactiveTransitionReport */
+    {0, 0, 0}, /* TraceFailureIndication */
+    {ngap_gNB_handle_trace_start, 0, 0}, /* TraceStart */
+    {0, 0, 0}, /* UEContextModification */
+    {ngap_gNB_handle_ue_context_release_command, 0, 0}, /* UEContextRelease */
+    {0, 0, 0}, /* UEContextReleaseRequest */
+    {0, 0, 0}, /* UERadioCapabilityCheck */
+    {0, 0, 0}, /* UERadioCapabilityInfoIndication */
+    {0, 0, 0}, /* UETNLABindingRelease */
+    {0, 0, 0}, /* UplinkNASTransport */
+    {0, 0, 0}, /* UplinkNonUEAssociatedNRPPaTransport */
+    {0, 0, 0}, /* UplinkRANConfigurationTransfer */
+    {0, 0, 0}, /* UplinkRANStatusTransfer */
+    {0, 0, 0}, /* UplinkUEAssociatedNRPPaTransport */
+    {0, 0, 0}, /* WriteReplaceWarning */
+    {0, 0, 0}, /* SecondaryRATDataUsageReport */
 
 };
-char *ngap_direction2String(int ngap_dir) {
-  static char *ngap_direction_String[] = {
-    "", /* Nothing */
-    "Originating message", /* originating message */
-    "Successfull outcome", /* successfull outcome */
-    "UnSuccessfull outcome", /* successfull outcome */
+const char *ngap_direction2String(int ngap_dir)
+{
+  static const char *const ngap_direction_String[] = {
+      "", /* Nothing */
+      "Originating message", /* originating message */
+      "Successfull outcome", /* successfull outcome */
+      "UnSuccessfull outcome", /* successfull outcome */
   };
   return(ngap_direction_String[ngap_dir]);
 }
