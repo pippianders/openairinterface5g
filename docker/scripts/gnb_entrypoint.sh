@@ -4,11 +4,6 @@ set -uo pipefail
 
 PREFIX=/opt/oai-gnb
 
-if [[ -v USE_VOLUMED_CONF ]]; then
-  cp $PREFIX/etc/mounted.conf $PREFIX/etc/gnb.conf
-else
-  echo "Using default configuration"
-fi
 
 echo "=================================="
 echo "== Configuration file:"

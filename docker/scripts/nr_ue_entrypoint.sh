@@ -4,11 +4,11 @@ set -uo pipefail
 
 PREFIX=/opt/oai-nr-ue
 
-if [[ -v USE_VOLUMED_CONF ]]; then
-  cp $PREFIX/etc/mounted.conf $PREFIX/etc/nr-ue.conf
-else
-  echo "Using default configuration"
-fi
+#if [[ -v USE_VOLUMED_CONF ]]; then
+#  cp $PREFIX/etc/mounted.conf $PREFIX/etc/nr-ue.conf
+#else
+#  echo "Using default configuration"
+#fi
 
 echo "=================================="
 echo "== Configuration file:"
