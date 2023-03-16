@@ -1,4 +1,16 @@
-**OpenAirInterface documentation overview**
+<table style="border-collapse: collapse; border: none;">
+  <tr style="border-collapse: collapse; border: none;">
+    <td style="border-collapse: collapse; border: none;">
+      <a href="http://www.openairinterface.org/">
+         <img src="./images/oai_final_logo.png" alt="" border=3 height=50 width=150>
+         </img>
+      </a>
+    </td>
+    <td style="border-collapse: collapse; border: none; vertical-align: center;">
+      <b><font size = "5">OpenAirInterface documentation overview</font></b>
+    </td>
+  </tr>
+</table>
 
 [[_TOC_]]
 
@@ -50,7 +62,7 @@ Legacy unmaintained files:
 Legacy unmaintained files:
 - 5Gnas.md
 
-## Building and running from images
+# Building and running from images
 
 - [How to build images](../docker/README.md)
 - [How to run 5G with the RFsimulator from images](../ci-scripts/yaml_files/5g_rfsimulator/README.md)
