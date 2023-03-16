@@ -20,16 +20,21 @@
  */
 
 #include "nr_sdap_entity.h"
+#include "nr_sdap.h"
 #include "common/utils/LOG/log.h"
 #include <openair2/LAYER2/PDCP_v10.1.0/pdcp.h>
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_ue_manager.h"
+#include "openair1/SIMULATION/ETH_TRANSPORT/proto.h"
+#include "executables/softmodem-common.h"
+#include "openair2/RRC/NAS/nas_config.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
 
 typedef struct {
+  ue_id_t ue_id; /* Used in UE: common UE id for all entities */
   nr_sdap_entity_t *sdap_entity_llist;
 } nr_sdap_entity_info;
 
@@ -294,8 +299,7 @@ static void nr_sdap_rx_entity(nr_sdap_entity_t *entity,
      * 5.2.2 Downlink
      * deliver the retrieved SDAP SDU to the upper layer.
      */
-    extern int nas_sock_fd[];
-    int len = write(nas_sock_fd[0], &buf[offset], size-offset);
+    int len = write(entity->pdusession_sock, &buf[offset], size-offset);
     LOG_D(SDAP, "RX Entity len : %d\n", len);
     LOG_D(SDAP, "RX Entity size : %d\n", size);
     LOG_D(SDAP, "RX Entity offset : %d\n", offset);
@@ -447,7 +451,33 @@ nr_sdap_entity_t *new_nr_sdap_entity(int is_gnb, bool has_sdap_rx, bool has_sdap
 
   sdap_entity->next_entity = sdap_info.sdap_entity_llist;
   sdap_info.sdap_entity_llist = sdap_entity;
+
+  if(!is_gnb) {
+    sdap_info.ue_id = ue_id;
+    char *ifname = "oaitun_ue";
+    sdap_entity->pdusession_sock = netlink_init_single_tun(ifname, pdusession_id);
+    //Add --nr-ip-over-lte option check for next line
+    if (IS_SOFTMODEM_NOS1 && is_defaultDRB){
+      nas_config(1, 1, !get_softmodem_params()->nsa ? 2 : 3, ifname);
+      sdap_entity->qfi = 7;
+    }
+    LOG_I(SDAP, "UE SDAP entity of PDU session %d will use tun interface\n", sdap_entity->pdusession_id);
+    sdap_entity->stop_thread = false;
+    start_sdap_tun_ue(sdap_entity);
+  }
+
   return sdap_entity;
+}
+
+void nr_sdap_set_qfi(uint8_t qfi, uint8_t pduid, ue_id_t ue_id, bool is_gnb) {
+  nr_sdap_entity_t *sdap_entity;
+  if (is_gnb) {
+    sdap_entity = nr_sdap_get_entity(ue_id, pduid);
+  } else {
+    sdap_entity = nr_sdap_get_entity(sdap_info.ue_id, pduid);
+  }
+  sdap_entity->qfi = qfi;
+  return;
 }
 
 nr_sdap_entity_t *nr_sdap_get_entity(ue_id_t ue_id, int pdusession_id)
@@ -468,23 +498,40 @@ nr_sdap_entity_t *nr_sdap_get_entity(ue_id_t ue_id, int pdusession_id)
   return NULL;
 }
 
-void delete_nr_sdap_entity(ue_id_t ue_id)
+static void stop_nr_sdap_entity(nr_sdap_entity_t *entity) {
+  entity->stop_thread = true;
+  char dummy = 0;
+  /* dummy write to socket to unblock and terminate thread */
+  if (write(entity->pdusession_sock, &dummy, 1) == -1)
+    LOG_E(SDAP, "SDAP entity thread alread terminated\n");
+  if (pthread_join(entity->pdusession_thread, NULL))
+    LOG_E(SDAP, "Cannot terminate SDAP entity thread\n");
+}
+
+void delete_nr_sdap_entity(ue_id_t ue_id, int pdusession_id)
 {
   nr_sdap_entity_t *entityPtr, *entityPrev = NULL;
   entityPtr = sdap_info.sdap_entity_llist;
 
-  if (entityPtr->ue_id == ue_id) {
+  if ((entityPtr->ue_id == ue_id) &&
+      (entityPtr->pdusession_id == pdusession_id)) {
     sdap_info.sdap_entity_llist = sdap_info.sdap_entity_llist->next_entity;
+    stop_nr_sdap_entity(entityPtr);
     free(entityPtr);
   } else {
-    while (entityPtr->ue_id != ue_id && entityPtr->next_entity != NULL) {
+    while ((entityPtr->ue_id != ue_id || entityPtr->pdusession_id != pdusession_id) &&
+           (entityPtr->next_entity != NULL)) {
       entityPrev = entityPtr;
       entityPtr = entityPtr->next_entity;
     }
 
-    if (entityPtr->ue_id != ue_id) {
+    if ((entityPtr->ue_id == ue_id) &&
+        (entityPtr->pdusession_id == pdusession_id)) {
       entityPrev->next_entity = entityPtr->next_entity;
+      stop_nr_sdap_entity(entityPtr);
       free(entityPtr);
+    } else {
+      AssertFatal(false, "No SDAP entity with ue_id %ld, pdussion_id %d found\n", ue_id, pdusession_id);
     }
   }
 }
