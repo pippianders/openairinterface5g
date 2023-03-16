@@ -53,10 +53,6 @@ Description Defines the layer 3 messages supported by the NAS sublayer
 #include "secu_defs.h"
 #include "emmData.h"
 
-
-
-//#define DEBUG_NAS_MESSAGE
-
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
 /****************************************************************************/
@@ -1355,14 +1351,6 @@ static uint32_t _nas_message_get_mac(
     /* length in bits */
     stream_cipher.blength    = length << 3;
     stream_compute_integrity(EIA1_128_ALG_ID, &stream_cipher, mac);
-
-    //nas_stream_cipher_t *stream_cipher, uint8_t out[4]);
-
-    //nas_stream_encrypt_eia1(
-    //  &stream_cipher,
-    //  mac);
-
-
 
     LOG_TRACE(DEBUG,
               "NAS_SECURITY_ALGORITHMS_EIA1 returned MAC %x.%x.%x.%x(%u) for length %d direction %d, count %d",

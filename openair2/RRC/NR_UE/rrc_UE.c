@@ -1606,17 +1606,12 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
    }
 
    uint8_t kRRCenc[16] = {0};
-   uint8_t kUPenc[16] = {0};
+   uint8_t kUPenc[16]  = {0};
    uint8_t kRRCint[16] = {0};
-  nr_derive_key(UP_ENC_ALG, NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
-                       NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,
-                       kUPenc);
-  nr_derive_key(RRC_ENC_ALG, NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
-                        NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,
-                       kRRCenc);
-  nr_derive_key(RRC_INT_ALG, NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
-                        NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,
-                       kRRCint);
+   nr_derive_key(UP_ENC_ALG, NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm, NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, kUPenc);
+   nr_derive_key(RRC_ENC_ALG, NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm, NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, kRRCenc);
+   nr_derive_key(RRC_INT_ALG, NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm, NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, kRRCint);
+
    LOG_I(NR_RRC, "driving kRRCenc, kRRCint and kUPenc from KgNB="
    "%02x%02x%02x%02x"
    "%02x%02x%02x%02x"
@@ -1959,10 +1954,8 @@ nr_rrc_ue_establish_srb2(
 
      uint8_t kRRCenc[16] = {0};
      uint8_t kRRCint[16] = {0};
-     nr_derive_key(RRC_ENC_ALG, NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
-                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, kRRCenc);
-     nr_derive_key(RRC_INT_ALG, NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
-                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, kRRCint);
+     nr_derive_key(RRC_ENC_ALG, NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm, NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, kRRCenc);
+     nr_derive_key(RRC_INT_ALG, NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm, NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, kRRCint);
 
      // Refresh SRBs
      nr_pdcp_add_srbs(ctxt_pP->enb_flag,
@@ -2055,13 +2048,10 @@ nr_rrc_ue_establish_srb2(
 
      uint8_t kUPenc[16] = {0};
      uint8_t kUPint[16] = {0};
+     nr_derive_key(UP_ENC_ALG, NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm, NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, kUPenc);
+     nr_derive_key(UP_INT_ALG, NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm, NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, kUPint);
 
-     nr_derive_key(UP_ENC_ALG, NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
-                          NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, kUPenc);
-     nr_derive_key(UP_INT_ALG, NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
-                          NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, kUPint);
-
-       // Refresh DRBs
+     // Refresh DRBs
      nr_pdcp_add_drbs(ctxt_pP->enb_flag,
                       ctxt_pP->rntiMaybeUEid,
                       0,

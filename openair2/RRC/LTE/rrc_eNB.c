@@ -44,7 +44,6 @@
 #include "RRC/LTE/MESSAGES/asn1_msg.h"
 #include "LTE_RRCConnectionRequest.h"
 #include "LTE_RRCConnectionReestablishmentRequest.h"
-//#include "ReestablishmentCause.h"
 #include "LTE_BCCH-BCH-Message.h"
 #include "LTE_UL-CCCH-Message.h"
 #include "LTE_DL-CCCH-Message.h"
@@ -116,7 +115,6 @@ mui_t                               rrc_eNB_mui = 0;
 extern uint32_t to_earfcn_DL(int eutra_bandP, uint32_t dl_CarrierFreq, uint32_t bw);
 extern int rrc_eNB_process_security(const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t *const ue_context_pP, security_capabilities_t *security_capabilities_pP);
 extern void process_eNB_security_key (const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t *const ue_context_pP, uint8_t *security_key_pP);
-// extern int derive_keNB_star(const uint8_t *kenb_32, const uint16_t pci, const uint32_t earfcn_dl, const bool is_rel8_only, uint8_t *kenb_star);
 extern int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt, rrc_eNB_ue_context_t *ue_context, unsigned char *buffer, int buffer_size, OCTET_STRING_t *scg_group_config,
     OCTET_STRING_t *scg_RB_config);
 extern struct rrc_eNB_ue_context_s *get_first_ue_context(eNB_RRC_INST *rrc_instance_pP);

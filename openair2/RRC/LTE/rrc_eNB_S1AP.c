@@ -954,7 +954,6 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
       &ctxt,
       ue_context_p,
       &S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p).security_capabilities);
-
     process_eNB_security_key (
       &ctxt,
       ue_context_p,

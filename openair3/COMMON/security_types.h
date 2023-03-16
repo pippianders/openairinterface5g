@@ -110,32 +110,5 @@ typedef struct eutran_vector_s {
   uint8_t kasme[KASME_LENGTH_OCTETS];
 } eutran_vector_t;
 
-/*
-#define FC_KASME        (0x10)
-#define FC_KENB         (0x11)
-#define FC_NH           (0x12)
-#define FC_KENB_STAR    (0x13)
-*/
-/* 33401 #A.7 Algorithm for key derivation function.
- * This FC should be used for:
- * - NAS Encryption algorithm
- * - NAS Integrity algorithm
- * - RRC Encryption algorithm
- * - RRC Integrity algorithm
- * - User Plane Encryption algorithm
- */
-//#define FC_ALG_KEY_DER  (0x15)
-//#define FC_KASME_TO_CK  (0x16)
-
-/*
-typedef enum {
-  NAS_ENC_ALG = 0x01,
-  NAS_INT_ALG = 0x02,
-  RRC_ENC_ALG = 0x03,
-  RRC_INT_ALG = 0x04,
-  UP_ENC_ALG  = 0x05,
-  UP_INT_ALG  = 0x06
-} algorithm_type_dist_t;
-*/
 
 #endif /* SECURITY_TYPES_H_ */

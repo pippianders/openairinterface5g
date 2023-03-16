@@ -225,12 +225,8 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
     LOG_I(RRC, "selecting integrity algorithm %d\n", ue_context_p->ue_context.integrity_algorithm);
 
     /* derive UP security key */
-    nr_derive_key(UP_ENC_ALG, ue_context_p->ue_context.ciphering_algorithm,
-                         ue_context_p->ue_context.kgnb,
-                         kUPenc);
-    nr_derive_key(UP_INT_ALG ,ue_context_p->ue_context.integrity_algorithm,
-                         ue_context_p->ue_context.kgnb,
-                         kUPint);
+    nr_derive_key(UP_ENC_ALG, ue_context_p->ue_context.ciphering_algorithm, ue_context_p->ue_context.kgnb, kUPenc);
+    nr_derive_key(UP_INT_ALG, ue_context_p->ue_context.integrity_algorithm, ue_context_p->ue_context.kgnb, kUPint);
 
     e_NR_CipheringAlgorithm cipher_algo;
     switch (ue_context_p->ue_context.ciphering_algorithm) {
