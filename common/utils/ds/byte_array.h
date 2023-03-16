@@ -29,10 +29,21 @@
 #include <stdint.h>
 #include <string.h>
 
+/*
+ * Simple and efficient data structure to bring together the length and the pointer
+ * You can cheaply copy and return it as it only utilizes two registries in x86-64
+ */
+
+
 typedef struct {
   size_t len;
   uint8_t *buf;
 } byte_array_t;
+
+
+/////////////////////////////////////////////////////////////
+// These macros need to be removed once the KPM is upgraded 
+/////////////////////////////////////////////////////////////
 
 /* create on the stack a byte_array_t named 'name' implemented as array of length 'length'*/
 #define BYTE_ARRAY_STACK(name, length)  \
