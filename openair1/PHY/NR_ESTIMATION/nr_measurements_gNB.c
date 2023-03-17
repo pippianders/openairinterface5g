@@ -232,12 +232,12 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
   int                N_RB_UL = gNB->ulsch[ulsch_id]->harq_processes[harq_pid]->ulsch_pdu.rb_size;
   int rx_power[NUMBER_OF_NR_ULSCH_MAX][fp->nb_antennas_rx];
   rx_power_tot[ulsch_id] = 0;
-  allocCast3D(rx_spatial_power, int, meas->rx_spatial_power, NUMBER_OF_NR_ULSCH_MAX, nrOfLayers, fp->nb_antennas_rx);
+  allocCast3D(rx_spatial_power, int, meas->rx_spatial_power, NUMBER_OF_NR_ULSCH_MAX, fp->nb_antennas_tx, fp->nb_antennas_rx);
   allocCast3D(rx_spatial_power_dB,
               unsigned short,
               meas->rx_spatial_power_dB,
               NUMBER_OF_NR_ULSCH_MAX,
-              nrOfLayers,
+              fp->nb_antennas_tx,
               fp->nb_antennas_rx);
   for (int aarx = 0; aarx < fp->nb_antennas_rx; aarx++){
 
