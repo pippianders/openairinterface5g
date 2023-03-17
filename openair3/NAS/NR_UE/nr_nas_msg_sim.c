@@ -715,7 +715,7 @@ void decodeDownlinkNASTransport(as_nas_info_t *initialNasMsg, uint8_t * pdu_buff
   }
 }
 
-static void generatePduSessionEstablishRequest(int Mod_id, uicc_t * uicc, as_nas_info_t *initialNasMsg){
+static void generatePduSessionEstablishRequest(int Mod_id, uicc_t * uicc, as_nas_info_t *initialNasMsg, nas_pdu_session_req_t *pdu_req){
   //wait send RegistrationComplete
   usleep(100*150);
   int size = 0;
@@ -726,11 +726,11 @@ static void generatePduSessionEstablishRequest(int Mod_id, uicc_t * uicc, as_nas
   uint8_t *req_buffer = malloc(req_length);
   pdu_session_establishment_request_msg pdu_session_establish;
   pdu_session_establish.protocoldiscriminator = FGS_SESSION_MANAGEMENT_MESSAGE;
-  pdu_session_establish.pdusessionid = 10;
+  pdu_session_establish.pdusessionid = pdu_req->pdusession_id;
   pdu_session_establish.pti = 1;
   pdu_session_establish.pdusessionestblishmsgtype = FGS_PDU_SESSION_ESTABLISHMENT_REQ;
   pdu_session_establish.maxdatarate = 0xffff;
-  pdu_session_establish.pdusessiontype = 0x91;
+  pdu_session_establish.pdusessiontype = pdu_req->pdusession_type;
   encode_pdu_session_establishment_request(&pdu_session_establish, req_buffer);
 
 
@@ -763,7 +763,7 @@ static void generatePduSessionEstablishRequest(int Mod_id, uicc_t * uicc, as_nas
   mm_msg->uplink_nas_transport.fgspayloadcontainer.payloadcontainercontents.length = req_length;
   mm_msg->uplink_nas_transport.fgspayloadcontainer.payloadcontainercontents.value = req_buffer;
   size += (2+req_length);
-  mm_msg->uplink_nas_transport.pdusessionid = 10;
+  mm_msg->uplink_nas_transport.pdusessionid = pdu_req->pdusession_id;
   mm_msg->uplink_nas_transport.requesttype = 1;
   size += 3;
   const bool has_nssai_sd = uicc->nssai_sd != 0xffffff; // 0xffffff means "no SD", TS 23.003
@@ -904,6 +904,24 @@ void *nas_nrue_task(void *args_p)
         /* TODO not processed by NAS currently */
         break;
 
+      case NAS_PDU_SESSION_REQ:
+      {
+        as_nas_info_t pduEstablishMsg;
+        memset(&pduEstablishMsg, 0, sizeof(as_nas_info_t));
+        nas_pdu_session_req_t *pduReq = &NAS_PDU_SESSION_REQ(msg_p);
+        generatePduSessionEstablishRequest(Mod_id, uicc, &pduEstablishMsg, pduReq);
+        if(pduEstablishMsg.length > 0){
+          MessageDef *message_p;
+          message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_UPLINK_DATA_REQ);
+          NAS_UPLINK_DATA_REQ(message_p).UEid          = Mod_id;
+          NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)pduEstablishMsg.data;
+          NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = pduEstablishMsg.length;
+          itti_send_msg_to_task(TASK_RRC_NRUE, instance, message_p);
+          LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
+        }
+        break;
+      }
+
       case NAS_CONN_ESTABLI_CNF:
       {
         LOG_I(NAS, "[UE %d] Received %s: errCode %u, length %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
@@ -928,18 +946,10 @@ void *nas_nrue_task(void *args_p)
             LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
           }
 
-          as_nas_info_t pduEstablishMsg;
-          memset(&pduEstablishMsg, 0, sizeof(as_nas_info_t));
-          generatePduSessionEstablishRequest(Mod_id, uicc, &pduEstablishMsg);
-          if(pduEstablishMsg.length > 0){
-            MessageDef *message_p;
-            message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_UPLINK_DATA_REQ);
-            NAS_UPLINK_DATA_REQ(message_p).UEid          = Mod_id;
-            NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)pduEstablishMsg.data;
-            NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = pduEstablishMsg.length;
-            itti_send_msg_to_task(TASK_RRC_NRUE, instance, message_p);
-            LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
-          }
+          MessageDef *message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_PDU_SESSION_REQ);
+          NAS_PDU_SESSION_REQ(message_p).pdusession_id = 10; /* first or default pdu session */
+          NAS_PDU_SESSION_REQ(message_p).pdusession_type = 0x91;
+          itti_send_msg_to_task(TASK_NAS_NRUE, instance, message_p);
         } else if(msg_type == FGS_PDU_SESSION_ESTABLISHMENT_ACC){
           capture_pdu_session_establishment_accept_msg(pdu_buffer, NAS_CONN_ESTABLI_CNF (msg_p).nasMsg.length);
         }

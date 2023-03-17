@@ -28,6 +28,8 @@
 #include "openair1/SIMULATION/ETH_TRANSPORT/proto.h"
 #include "executables/softmodem-common.h"
 #include "openair2/RRC/NAS/nas_config.h"
+#include "openair2/COMMON/as_message.h"
+#include "intertask_interface.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -586,6 +588,28 @@ static struct sdap_entity_info get_sdap_entity_info(void) {
   return info;
 }
 
+/* perform actions based on command received from client */
+static void do_action(uint8_t *buf) {
+  int cmd = buf[0];
+
+  switch(cmd) {
+    case 1:
+      LOG_I(SDAP, "Received request to add new PDU session. Forwarding it to RRC.\n");
+      MessageDef *message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_PDU_SESSION_REQ);
+      NAS_PDU_SESSION_REQ(message_p).pdusession_id = buf[1];
+      NAS_PDU_SESSION_REQ(message_p).pdusession_type = 0x91;
+      itti_send_msg_to_task(TASK_NAS_NRUE, 0, message_p);
+      break;
+
+    case 2:
+      LOG_I(SDAP, "Received request to delete PDU session. Forwarding it to RRC.\n");
+      break;
+
+    default:
+      break;
+  }
+}
+
 void *sdap_pdusession_manager(void*) {
   int server_fd;
   struct sockaddr_in address;
@@ -638,18 +662,16 @@ void *sdap_pdusession_manager(void*) {
         LOG_W(SDAP, "PDU session manager failed to receive data from client\n");
         break;
       }
-      printf("%s\n", buffer);
+      do_action((uint8_t*)buffer);
+      //printf("%d bytes received. data: %d %d\n", valread, buffer[0], buffer[1]);
 
       // get SDAP entity info
       struct sdap_entity_info info = get_sdap_entity_info();
-      printf("packed data %ld to be sent %lx %lx\n", sizeof(info), *((uint64_t*)&info), *((uint64_t*)&info+1));
+      //printf("packed data %ld to be sent %lx %lx\n", sizeof(info), *((uint64_t*)&info), *((uint64_t*)&info+1));
       // Send message to client
-      int ret = send(new_socket, (void*)&info, sizeof(info), 0);
-      if (ret < 0) {
+      if (send(new_socket, (void*)&info, sizeof(info), 0) < 0) {
         LOG_W(SDAP, "PDU session manager failed to send data to client\n");
         break;
-      } else {
-        LOG_I(SDAP, "Sent %d bytes\n", ret);
       }
 
       // Clear buffer
