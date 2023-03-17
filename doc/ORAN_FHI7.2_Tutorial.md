@@ -20,15 +20,17 @@
 
 The hardware on which we have tried this tutorial:
 
-|Hardware (CPU,RAM)                          |Operating System                               |NIC (Vendor,Driver,Firmware)                     |
-|--------------------------------------------|-----------------------------------------------|-------------------------------------------------|
+|Hardware (CPU,RAM)                          |Operating System                  |NIC (Vendor,Driver,Firmware)                     |
+|--------------------------------------------|----------------------------------|-------------------------------------------------|
 |Intel(R) Xeon(R) Gold 6154 (2*18 Core), 64GB|RHEL 8.6 (4.18.0-372.26.1.rt7.183)|QLogic FastLinQ QL41000,qede,mbi 15.35.1         |
 |Intel(R) Xeon(R) Gold 6354 18-Core, 128GB   |RHEL 8.7 (4.18.0-425.10.1.rt7.220)|Intel XXV710 for 25GbE SFP28,i40e,6.02 0x80003888|
-|AMD EPYC 7513 32-Core Processor             |Ubuntu 20.04 (5.4.143-rt64)                    |Intel X710 for 10GbE SFP+,i40e,5.04 0x80002530|
+|AMD EPYC 7513 32-Core Processor, 256GB      |Ubuntu 20.04 (5.4.143-rt64)       |Intel X710 for 10GbE SFP+,i40e,5.04 0x80002530   |
+
+**NOTE**: These are not minimum hardware requirements. This is the configuration of our servers.
 
 We always set our servers to maximum performance mode. 
 
-For PTP grandmaster we have used Fibrolan Falcon-RX. The radio unit which we have used for this tutorial is VVDN LPRU.
+For PTP grandmaster we have used Fibrolan Falcon-RX. The O-RU which we have used for this tutorial is VVDN LPRU.
 
 ## 1.1 DPDK(Data Plane Development Kit)
 
