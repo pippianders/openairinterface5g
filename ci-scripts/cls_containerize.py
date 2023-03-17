@@ -837,38 +837,28 @@ class Containerize():
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		logging.debug('\u001B[1m Deploying OAI Object on server: ' + lIpAddr + '\u001B[0m')
-
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
-
 		#CreateWorkspace(mySSH, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
-		if re.search('AW2S', lSourcePath):
-			mySSH.command('cd ' + lSourcePath + '/openairinterface5g/ci-scripts/yaml_files/sa_aw2s_gnb', '\$', 5)
-			mySSH.command('cp docker-compose.yml ci-docker-compose.yml', '\$', 5)
-			logging.debug(self.eNBSourceCodePath)
-			mySSH.command(f'docker compose --file ci-docker-compose.yml up -d', '\$', 30)
-			result = re.search(r'Container\s+(?P<container_name>\S+)', mySSH.getBefore())
-		else:
-			mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
-			mySSH.command('cp docker-compose.yml ci-docker-compose.yml', '\$', 5)
-			logging.debug(self.eNBSourceCodePath)
-			imagesList = ['oai-enb', 'oai-gnb', 'oai-nr-cuup']
-			for image in imagesList:
-				imageToUse = self.ImageTagToUse(image)
-				mySSH.command(f'sed -i -e "s#image: {image}:latest#image: {imageToUse}#" ci-docker-compose.yml', '\$', 2)
-			localMmeIpAddr = EPC.MmeIPAddress
-			mySSH.command('sed -i -e "s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/" ci-docker-compose.yml', '\$', 2)
-			# Currently support only one
-			svcName = self.services[self.eNB_instance]
-			if svcName == '':
-				logging.warning('no service name given: starting all services in ci-docker-compose.yml!')
-
-			mySSH.command(f'docker-compose --file ci-docker-compose.yml up -d -- {svcName}', '\$', 30)
-			# Checking Status
-			grep = ''
-			if svcName != '': grep = f' | grep -A3 {svcName}'
-			mySSH.command(f'docker-compose --file ci-docker-compose.yml config {grep}', '\$', 5)
-			result = re.search('container_name: (?P<container_name>[a-zA-Z0-9\-\_]+)', mySSH.getBefore())
+		mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
+		mySSH.command('cp docker-compose.yml ci-docker-compose.yml', '\$', 5)
+		logging.debug(self.eNBSourceCodePath)
+		imagesList = ['oai-enb', 'oai-gnb', 'oai-nr-cuup']
+		for image in imagesList:
+			imageToUse = self.ImageTagToUse(image)
+			mySSH.command(f'sed -i -e "s#image: {image}:latest#image: {imageToUse}#" ci-docker-compose.yml', '\$', 2)
+		localMmeIpAddr = EPC.MmeIPAddress
+		mySSH.command('sed -i -e "s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/" ci-docker-compose.yml', '\$', 2)
+		# Currently support only one
+		svcName = self.services[self.eNB_instance]
+		if svcName == '':
+			logging.warning('no service name given: starting all services in ci-docker-compose.yml!')
+		mySSH.command(f'docker-compose --file ci-docker-compose.yml up -d -- {svcName}', '\$', 30)
+		# Checking Status
+		grep = ''
+		if svcName != '': grep = f' | grep -A3 {svcName}'
+		mySSH.command(f'docker-compose --file ci-docker-compose.yml config {grep}', '\$', 5)
+		result = re.search('container_name: (?P<container_name>[a-zA-Z0-9\-\_]+)', mySSH.getBefore())
 
 		unhealthyNb = 0
 		healthyNb = 0
@@ -987,11 +977,10 @@ class Containerize():
 		for s in allServices:
 			mySSH.command(f'docker-compose -f ci-docker-compose.yml ps --all -- {s}', '\$', 5, silent=False)
 			running = mySSH.getBefore().split('\r\n')[3:-1]
-			#logging.debug(f'running services: {running}')
+			logging.debug(f'running services: {running}')
 			if len(running) > 0: # something is running for that service
 				services.append(s)
 		logging.info(f'stopping services {services}')
-
 		mySSH.command(f'docker-compose -f ci-docker-compose.yml stop -t3', '\$', 30)
 		time.sleep(5)  # give some time to running containers to stop
 		for svcName in services:
@@ -999,11 +988,10 @@ class Containerize():
 			filename = f'{svcName}-{HTML.testCase_id}.log'
 			#mySSH.command(f'docker-compose -f ci-docker-compose.yml logs --no-log-prefix -- {svcName} | head -n -1 &> {lSourcePath}/cmake_targets/log/{filename}', '\$', 30)
 			mySSH.command(f'docker-compose -f ci-docker-compose.yml logs --no-log-prefix -- {svcName} &> {lSourcePath}/cmake_targets/log/{filename}', '\$', 120)
-
 		mySSH.command('docker-compose -f ci-docker-compose.yml down', '\$', 5)
+
 		# Cleaning any created tmp volume
 		mySSH.command('docker volume prune --force', '\$', 20)
-
 		mySSH.close()
 
 		# Analyzing log file!

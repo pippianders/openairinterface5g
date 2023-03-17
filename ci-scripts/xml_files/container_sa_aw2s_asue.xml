@@ -29,6 +29,13 @@
     010000
     020000
     001000
+    000001
+    002000
+    000100
+    000200
+    003000
+    004000
+    030000
   </TestCaseRequestedList>
   <TestCaseExclusionList></TestCaseExclusionList>
 
@@ -48,6 +55,7 @@
   <testCase id="020000">
     <class>Deploy_Object</class>
     <desc>Deploy gNB (TDD/Band78/20MHz/aw2s) in a container</desc>
+    <yaml_path>ci-scripts/yaml_files/sa_aw2s_gnb</yaml_path>
     <eNB_instance>0</eNB_instance>
     <eNB_serverId>0</eNB_serverId>
   </testCase>
@@ -58,10 +66,34 @@
     <id>amarisoft_ue</id>
   </testCase>
 
+  <testCase id="000001">
+    <class>IdleSleep</class>
+    <desc>Sleep</desc>
+    <idle_sleep_time_in_sec>20</idle_sleep_time_in_sec>
+  </testCase>
+
   <testCase id="002000">
     <class>Attach_UE</class>
     <desc>Attach UE</desc>
     <id>amarisoft_ue_1</id>
+  </testCase>
+
+  <testCase id="000100">
+    <class>Ping</class>
+    <desc>Ping: 20pings in 20sec</desc>
+    <id>amarisoft_ue_1</id>
+    <ping_args>-c 20</ping_args>
+    <ping_packetloss_threshold>1</ping_packetloss_threshold>
+    <ping_rttavg_threshold>15</ping_rttavg_threshold>
+  </testCase>
+
+  <testCase id="000200">
+    <class>Ping</class>
+    <desc>Ping: 100pings in 20sec</desc>
+    <id>amarisoft_ue_1</id>
+    <ping_args>-c 100 -i 0.2</ping_args>
+    <ping_packetloss_threshold>1</ping_packetloss_threshold>
+    <ping_rttavg_threshold>15</ping_rttavg_threshold>
   </testCase>
 
   <testCase id="003000">
@@ -73,87 +105,56 @@
   <testCase id="004000">
     <class>Terminate_UE</class>
     <desc>Terminate UE</desc>
-    <id>amarisoft_ue_1</id>
+    <id>amarisoft_ue</id>
   </testCase>
 
-  <testCase id="000001">
-    <class>IdleSleep</class>
-    <desc>Sleep</desc>
-    <idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
+  <testCase id="030000">
+    <class>Undeploy_Object</class>
+    <desc>Undeploy gNB</desc>
+    <yaml_path>ci-scripts/yaml_files/sa_aw2s_gnb</yaml_path>
+    <eNB_instance>0</eNB_instance>
+    <eNB_serverId>0</eNB_serverId>
+    <d_retx_th>1,100,100,100</d_retx_th>
+    <u_retx_th>1,100,100,100</u_retx_th>
   </testCase>
 
-  <testCase id="000002">
-    <class>IdleSleep</class>
-    <desc>Sleep</desc>
-    <idle_sleep_time_in_sec>20</idle_sleep_time_in_sec>
-  </testCase>
-
-  <testCase id="050000">
-    <class>Ping</class>
-    <desc>Ping: 20pings in 20sec</desc>
-    <id>idefix</id>
-    <ping_args>-c 20</ping_args>
-    <ping_packetloss_threshold>1</ping_packetloss_threshold>
-    <ping_rttavg_threshold>15</ping_rttavg_threshold>
-  </testCase>
-
-  <testCase id="050001">
-    <class>Ping</class>
-    <desc>Ping: 100pings in 20sec</desc>
-    <id>idefix</id>
-    <ping_args>-c 100 -i 0.2</ping_args>
-    <ping_packetloss_threshold>1</ping_packetloss_threshold>
-    <ping_rttavg_threshold>15</ping_rttavg_threshold>
-  </testCase>
-
-  <testCase id="070000">
+  <testCase id="000010">
     <class>Iperf</class>
-    <desc>iperf (DL/30Mbps/UDP)(30 sec)(single-ue profile)</desc>
-    <iperf_args>-u -b 30M -t 30 -i 1 -fm</iperf_args>
+    <desc>iperf (DL/20Mbps/UDP)(30 sec)(single-ue profile)</desc>
+    <iperf_args>-u -b 20M -t 30 -i 1 -c 172.21.6.102 -R</iperf_args>
     <direction>DL</direction>
-    <id>idefix</id>
+    <id>amarisoft_ue_1</id>
     <iperf_packetloss_threshold>25</iperf_packetloss_threshold>
     <iperf_bitrate_threshold>80</iperf_bitrate_threshold>
     <iperf_profile>single-ue</iperf_profile>
   </testCase>
 
-  <testCase id="070001">
+  <testCase id="000020">
     <class>Iperf</class>
     <desc>iperf (UL/8Mbps/UDP)(30 sec)(single-ue profile)</desc>
-    <iperf_args>-u -b 8M -t 30 -i 1 -fm</iperf_args>
+    <iperf_args>-u -b 10M -t 30 -i 1 -fm </iperf_args>
     <direction>UL</direction>
-    <id>idefix</id>
+    <id>amarisoft_ue_1</id>
     <iperf_packetloss_threshold>1</iperf_packetloss_threshold>
     <iperf_bitrate_threshold>95</iperf_bitrate_threshold>
     <iperf_profile>single-ue</iperf_profile>
   </testCase>
 
-  <testCase id="070002">
+  <testCase id="000030">
     <class>Iperf</class>
     <desc>iperf (BIDIR TCP)(10 sec)(single-ue profile)</desc>
     <iperf_args>-t 10 --bidir</iperf_args>
     <direction>BIDIR</direction>
-    <id>idefix</id>
+    <id>amarisoft_ue_1</id>
     <iperf_profile>single-ue</iperf_profile>
   </testCase>
 
-  <testCase id="030201">
-    <class>Undeploy_Object</class>
-    <desc>Undeploy gNB</desc>
-    <yaml_path>ci-scripts/yaml_files/sa_b200_gnb</yaml_path>
-    <eNB_instance>0</eNB_instance>
-    <eNB_serverId>0</eNB_serverId>
-    <d_retx_th>1,100,100,100</d_retx_th>
-    <u_retx_th>1,100,100,100</u_retx_th>
-</testCase>
- 
   <testCase id="200000">
     <class>Custom_Command</class>
     <desc>Enable Sleep States</desc>
-    <node>nepes</node>
+    <node>manarola</node>
     <command>sudo cpupower idle-set -E</command>
   </testCase>
-
 
 </testCaseList>
 

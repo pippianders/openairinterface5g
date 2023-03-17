@@ -333,11 +333,10 @@ class EPCManagement():
 				logging.debug(f'\u001B[1m   Now using project {ocProjectName}\u001B[0m')
 			for ii in imageNames:
 					mySSH.command(f'helm uninstall ' + ii, '\$', 30)
-			time.sleep(20)
 			mySSH.command(f'cd /opt/oai-cn5g-fed-develop-march-2023/ci-scripts/charts/oai-5g-basic', '\$', 5)
 			mySSH.command(f'helm spray .', '\$', 120)
 			mySSH.command(f'oc get pods', '\$', 5)
-			if mySSH.getBefore().count('Running') != 8:
+			if mySSH.getBefore().count('Running') != 9:
 				logging.error('\u001B[1m Deploying 5GCN Failed using helm chart on OC Cluster\u001B[0m')
 				for ii in imageNames:
 					mySSH.command('helm uninstall' + ii, '\$', 5)
@@ -346,15 +345,15 @@ class EPCManagement():
 					logging.debug('OC CN5G components uninstalled')
 				else:
 					logging.error('OC CN5G components not uninstalled')
-					#mySSH.command('oc logout', '\$', 30)
+					mySSH.command('oc logout', '\$', 30)
 					mySSH.close()
 					HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_PROJECT_FAIL)
 					RAN.prematureExit = True
 					return
-			#cmd = mySSH.command('oc logout', '\$', 5)
-			#res1 = re.search('Logged "oaicicd" out', mySSH.getBefore())
-			#if res1 is not None:
-			#	logging.debug('oaicicd-ran logged out')
+			cmd = mySSH.command('oc logout', '\$', 5)
+			res1 = re.search('Logged "oaicicd" out', mySSH.getBefore())
+			if res1 is not None:
+				logging.debug('oaicicd-ran logged out')
 		else:
 			logging.error('This option should not occur!')
 		mySSH.close()
@@ -587,7 +586,7 @@ class EPCManagement():
 
 	def Terminate5GCN(self, HTML):
 		# imageNames = ["oai-nrf", "oai-amf", "oai-smf", "oai-spgwu-tiny", "oai-ausf", "oai-udm", "oai-udr"]
-		imageNames = ["nrf", "amf", "smf", "spgwu", "ausf", "udm", "udr"]
+		imageNames = ["mysql", "nrf", "amf", "smf", "spgwu", "ausf", "udm", "udr"]
 		mySSH = SSH.SSHConnection()
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
 		message = ''
@@ -620,10 +619,10 @@ class EPCManagement():
 			else:
 				message = 'No Tracking area update request'
 			logging.debug(message)
-		elif re.match('OC-OAI-5GCN', self.Type, re.IGNORECASE):
-			logging.debug('Deploying OAI CN5G on Openshift Cluster')
-			lIpAddr = self.eNBIPAddress
-			lSourcePath = self.eNBSourceCodePath
+		elif re.match('OC-OAI-CN5G', self.Type, re.IGNORECASE):
+			logging.debug('Terminating OAI CN5G on Openshift Cluster')
+			lIpAddr = self.IPAddress
+			lSourcePath = self.SourceCodePath
 			ocUserName = self.OCUserName
 			ocPassword = self.OCPassword
 			ocProjectName = self.OCProjectName
@@ -659,7 +658,7 @@ class EPCManagement():
 			mySSH.command('mkdir ' + self.SourceCodePath + '/logs','\$', 5)
 			for ii in imageNames:
 			       podName = mySSH.command('oc get pods | grep' + ii + '| awk print $1 || true', '\$', 60)
-			       mySSH.command('oc logs -f' + podName + '-c' +  ii + ' &> logs/'+ ii + '.logs', '\$', 60)
+			       mySSH.command('oc logs -f' + str(podName) + '-c' +  ii + ' &> logs/'+ ii + '.logs', '\$', 60)
 			mySSH.command('oc describe pod &> logs/describe-pods-post-test.logs', '\$', 5)
 			mySSH.command('oc get pods.metrics.k8s.io &> logs/nf-resource-consumption.log', '\$', 5)
 			logging.debug('Terminating OC OAI CN5G')

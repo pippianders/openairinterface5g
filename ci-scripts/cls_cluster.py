@@ -171,8 +171,8 @@ class Cluster:
 	def _undeploy_pod(self, filename):
 		self.cmd.run(f'oc delete -f {filename}')
 
-	def PullClusterImage(self, HTML):
-		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.eNBSourceCodePath == '':
+	def PullClusterImage(self, HTML, RAN):
+		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.eNBSourceCodePath == '' or self.imageToPull == '':
 			HELP.GenericHelp(CONST.Version)
 			HELP.EPCSrvHelp(self.eNBIPAddress, self.eNBUserName,
 					self.eNBPassword, self.eNBSourceCodePath)
@@ -194,30 +194,21 @@ class Cluster:
 		    "http") and not self.OCRegistry.endswith("/"):
 			sys.exit(
 			    f'ocRegistry {self.OCRegistry} should not start with http:// or https:// and end on a slash /')
-	       # if lIpAddr != 'none':
-	       #	 logging.debug('Pulling images onto server: ' + lIpAddr)
-	       #	 myCmd = cls_cmd.RemoteCmd(lIpAddr)
-	       # else:
-	       #	 logging.debug('Pulling images locally')
-	       #	 myCmd = cls_cmd.LocalCmd()
 		self.testCase_id = HTML.testCase_id
 
-		# Workaround for some servers, we need to erase completely the
-		# workspace
+	       # Workaround for some servers, we need to erase completely the workspace
 	       # if self.forcedWorkspaceCleanup:
 	       #	 self.cmd.run(f'rm -Rf {lSourcePath}')
 	       # cls_containerize.CreateWorkspace(
 	       #     self.cmd, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
 
-		# logging to OC Cluster and then switch to corresponding
-		# project
-
+		# logging to OC Cluster and then switch to corresponding project
 		mySSH.command(f'oc login -u {ocUserName} -p {ocPassword} --server https://api.oai.cs.eurecom.fr:6443', '\$', 30)
 		if mySSH.getBefore().count('Login successful.') == 0:
 			logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
 			mySSH.close()
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
-			#RAN.prematureExit = True
+			RAN.prematureExit = True
 			return
 		else:
 			logging.debug('\u001B[1m   Login to OC Cluster Successfully\u001B[0m')
@@ -228,66 +219,30 @@ class Cluster:
 				mySSH.close()
 				HTML.CreateHtmlTestRow(
 				    'N/A', 'KO', CONST.OC_PROJECT_FAIL)
-				#RAN.prematureExit = True
+				RAN.prematureExit = True
 				return
 			else:
 				logging.debug(f'\u001B[1m   Now using project {ocProjectName}\u001B[0m')
-	       # ret = self.cmd.run(
-	       #     f'oc login -u {ocUserName} -p {ocPassword} --server {self.OCUrl}')
-	       # if ret.returncode != 0:
-	       #	 logging.error(
-	       #	     '\u001B[1m OC Cluster Login Failed\u001B[0m')
-	       #	 HTML.CreateHtmlTestRow(
-	       #	     'N/A', 'KO', CONST.OC_LOGIN_FAIL)
-	       #	 return False
-
-	       # ret = self.cmd.run(f'oc project {ocProjectName}')
-	       # if ret.returncode != 0:
-	       #	 logging.error(
-	       #	     f'\u001B[1mUnable to access OC project {ocProjectName}\u001B[0m')
-	       #	 self.cmd.run('oc logout')
-	       #	 HTML.CreateHtmlTestRow(
-	       #	     'N/A', 'KO', CONST.OC_PROJECT_FAIL)
-	       #	 return False
-
-	       # cmd = 'oc whoami -t | docker login -u oaicicd --password-stdin {self.OCRegistry}'
-	       # response = myCmd.run(cmd)
-	       # if response.returncode != 0:
-	       #	 msg = 'Could not log into local registry'
-	       #	 logging.error(msg)
-	       #	 myCmd.close()
-	       #	 HTML.CreateHtmlTestRow(
-	       #	     msg, 'KO', CONST.ALL_PROCESSES_OK)
-	       #	 return False
 		mySSH.command(f'oc whoami -t | docker login -u oaicicd --password-stdin {self.OCRegistry}', '\$', 5)
 		if mySSH.getBefore().count(f'Login Succeeded') == 0:
 			logging.error(f'\u001B[1m Unable to access OC project {ocProjectName}\u001B[0m')
-			#mySSH.command('oc logout', '\$', 30)
+			mySSH.command('oc logout', '\$', 30)
 			mySSH.close()
-			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_PROJECT_FAIL)
-			#RAN.prematureExit = True
+			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
+			RAN.prematureExit = True
 			return
 		#mySSH.command(f'docker rmi '+ str(self.OCRegistry) + str(self.OCProjectName) + '/' + image  + ':test', '\$', 5)
 		for image in self.imageToPull:
-			mySSH.command(f'docker rmi '+ str(self.OCRegistry) + str(self.OCProjectName) + '/' + image  + ':test', '\$', 5)
+			mySSH.command(f'docker rmi '+ str(self.OCRegistry) + str(self.OCProjectName) + '/' + image  + ':develop', '\$', 5)
 			mySSH.command(f'docker pull '+ str(self.OCRegistry) + str(self.OCProjectName) + '/' + image  + ':develop', '\$', 5)
-		       # if cmd.returncode != 0:
-		       #	 logging.debug(response)
-		       #	 msg = f'Could not pull {image} from local registry : {tagToUse}'
-		       #	 logging.error(msg)
-		       #	 myCmd.close()
-		       #	 HTML.CreateHtmlTestRow('msg', 'KO', CONST.ALL_PROCESSES_OK)
-		       #	 return False
-
-		#cmd = 'oc logout'
-		#response = myCmd.run(cmd)
-		#if response.returncode != 0:
-		#	msg = 'Could not log off from local registry'
-		#	logging.error(msg)
-		#	myCmd.close()
-		#	HTML.CreateHtmlTestRow(msg, 'KO', CONST.ALL_PROCESSES_OK)
-		#	return False
-
+			if mySSH.getBefore().count('Error')!=0:
+				logging.error(f'Could not pull {image} from local registry : {self.OCRegistry}')
+				mySSH.command('oc logout', '\$', 30)
+				mySSH.close()
+				HTML.CreateHtmlTestRow('msg', 'KO', CONST.ALL_PROCESSES_OK)
+				RAN.prematureExit = True
+				return False
+		mySSH.command('oc logout', '\$', 5)
 		mySSH.close()
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		return True
@@ -296,7 +251,6 @@ class Cluster:
 		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit(f'Insufficient Parameter: ranRepository {self.ranRepository} ranBranch {ranBranch} ranCommitID {self.ranCommitID}')
-
 		lIpAddr = self.eNBIPAddress
 		lSourcePath = self.eNBSourceCodePath
 		if lIpAddr == '' or lSourcePath == '':

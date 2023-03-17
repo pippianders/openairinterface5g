@@ -827,7 +827,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					if ldpc.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'Pull_Cluster_Image':
-					if not CLUSTER.PullClusterImage(HTML):
+					if not CLUSTER.PullClusterImage(HTML,RAN):
 						RAN.prematureExit = True
 				elif action == 'Build_Cluster_Image':
 					if not CLUSTER.BuildClusterImage(HTML):
