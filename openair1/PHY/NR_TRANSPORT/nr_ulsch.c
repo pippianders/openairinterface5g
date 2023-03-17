@@ -124,7 +124,7 @@ void dump_pusch_stats(FILE *fd,PHY_VARS_gNB *gNB) {
   for (int i = 0;i < NUMBER_OF_NR_SCH_STATS_MAX;i++) {
 
     if (gNB->ulsch_stats[i].rnti>0 && gNB->ulsch_stats[i].frame != gNB->ulsch_stats[i].dump_frame) {
-      gNB->ulsch_stats[i].dump_frame = gNB->ulsch_stats[i].frame; 
+      gNB->ulsch_stats[i].dump_frame = gNB->ulsch_stats[i].frame;
       for (int aa=0;aa<gNB->frame_parms.nb_antennas_rx;aa++)
           if (aa==0) fprintf(fd,"ULSCH RNTI %4x, %d.%d: ulsch_power[%d] %d,%d ulsch_noise_power[%d] %d.%d, sync_pos %d\n",
                                      gNB->ulsch_stats[i].rnti,gNB->ulsch_stats[i].frame,gNB->ulsch_stats[i].dump_frame,

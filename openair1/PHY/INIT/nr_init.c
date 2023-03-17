@@ -853,6 +853,10 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
     free_and_zero(pusch_vars[ULSCH_id]->llr);
     free_and_zero(pusch_vars[ULSCH_id]);
   } //ULSCH_id
+  free_and_zero(gNB->measurements.n0_subband_power);
+  free_and_zero(gNB->measurements.n0_subband_power_dB);
+  free_and_zero(gNB->measurements.rx_spatial_power);
+  free_and_zero(gNB->measurements.rx_spatial_power_dB);
 }
 
 //Adding nr_schedule_handler
