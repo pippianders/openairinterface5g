@@ -77,6 +77,7 @@ void free_gNB_ulsch(NR_gNB_ULSCH_t **ulschptr, uint16_t N_RB_UL)
       }
       free_and_zero(ulsch->harq_processes[i]->c);
       free_and_zero(ulsch->harq_processes[i]->d);
+      free(ulsch->harq_processes[i]->d_to_be_cleared);
       free_and_zero(ulsch->harq_processes[i]);
       ulsch->harq_processes[i] = NULL;
     }
@@ -111,6 +112,8 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations, uint16_t N_RB_UL)
       ulsch->harq_processes[i]->c[r] = (uint8_t*)malloc16_clear(8448*sizeof(uint8_t));
       ulsch->harq_processes[i]->d[r] = (int16_t*)malloc16_clear((68*384)*sizeof(int16_t));
     }
+    ulsch->harq_processes[i]->d_to_be_cleared = calloc(a_segments, sizeof(bool));
+    AssertFatal(ulsch->harq_processes[i]->d_to_be_cleared != NULL, "out of memory\n");
   }
 
   return(ulsch);
@@ -151,6 +154,7 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
         /// code blocks after bit selection in rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
         //int16_t e[MAX_NUM_NR_ULSCH_SEGMENTS][3*8448];
         ulsch->harq_processes[i]->E=0;
+        ulsch->harq_processes[i]->harq_to_be_cleared=true;
       }
     }
   }
@@ -452,6 +456,13 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 #ifdef DEBUG_ULSCH_DECODING
   printf("Segmentation: C %d, K %d\n",harq_process->C,harq_process->K);
 #endif
+
+  if (harq_process->harq_to_be_cleared) {
+    for (int r = 0; r < harq_process->C; r++)
+      harq_process->d_to_be_cleared[r] = true;
+    harq_process->harq_to_be_cleared = false;
+  }
+
   Kr = harq_process->K;
   Kr_bytes = Kr >> 3;
 
@@ -523,7 +534,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                                        harq_e,
                                        harq_process->C,
                                        pusch_pdu->pusch_data.rv_index,
-                                       harq_process->new_rx,
+                                       harq_process->d_to_be_cleared[r],
                                        E,
                                        harq_process->F,
                                        Kr - harq_process->F - 2 * (decParams.Z))
@@ -532,6 +543,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
             no_iteration_ldpc = ulsch->max_ldpc_iterations + 1;
             return 1;
           }
+
+          harq_process->d_to_be_cleared[r] = false;
 
           // set first 2*Z_c bits to zeros
           memset(&z[0], 0, 2 * harq_process->Z * sizeof(int16_t));
