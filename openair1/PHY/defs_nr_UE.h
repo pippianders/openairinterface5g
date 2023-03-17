@@ -655,6 +655,7 @@ typedef struct {
   void *phy_sim_pdsch_rxdataF_comp;
   void *phy_sim_pdsch_dl_ch_estimates;
   void *phy_sim_pdsch_dl_ch_estimates_ext;
+  int network_slicing;
 } PHY_VARS_NR_UE;
 
 typedef struct nr_phy_data_tx_s {

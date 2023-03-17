@@ -84,6 +84,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "nr_nas_msg_sim.h"
 #include <openair1/PHY/MODULATION/nr_modulation.h>
 #include "openair2/GNB_APP/gnb_paramdef.h"
+#include "openair2/SDAP/nr_sdap/nr_sdap_entity.h"
 
 extern const char *duplex_mode[];
 THREAD_STRUCT thread_struct;
@@ -481,6 +482,8 @@ int main( int argc, char **argv ) {
     RCconfig_nr_ue_macrlc();
     get_channel_model_mode();
   }
+
+  if (get_softmodem_params()->network_slicing) start_sdap_pdusession_manager();
 
   if (get_softmodem_params()->do_ra)
     AssertFatal(get_softmodem_params()->phy_test == 0,"RA and phy_test are mutually exclusive\n");

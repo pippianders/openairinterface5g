@@ -535,3 +535,136 @@ void delete_nr_sdap_entity(ue_id_t ue_id, int pdusession_id)
     }
   }
 }
+
+#pragma pack(push, 1)
+struct sdap_entity_info_el {
+  uint8_t sdap_entity_number : 8;
+  uint8_t pdusession_id      : 8;
+};
+
+struct sdap_entity_info {
+  uint16_t num_elements;
+  struct sdap_entity_info_el element[8];
+};
+#pragma pack(pop)
+
+static int get_num_entity(void) {
+  int num = 0;
+  nr_sdap_entity_t *entityPtr;
+  entityPtr = sdap_info.sdap_entity_llist;
+  if (entityPtr) num++;
+  else return num;
+
+  while (entityPtr->next_entity != NULL) {
+    entityPtr = entityPtr->next_entity;
+    num++;
+  }
+  return num;
+}
+
+/* pack entity information to send to client */
+static struct sdap_entity_info get_sdap_entity_info(void) {
+  int num = 0;
+  struct sdap_entity_info info;
+
+  /* first entity */
+  nr_sdap_entity_t *entityPtr;
+  entityPtr = sdap_info.sdap_entity_llist;
+  info.element[num].sdap_entity_number = (uint8_t)1;
+  info.element[num].pdusession_id = (uint8_t)entityPtr->pdusession_id;
+  num++;
+
+  /* remaining entity */
+  while (entityPtr->next_entity != NULL) {
+    entityPtr = entityPtr->next_entity;
+    info.element[num].sdap_entity_number = (uint8_t)1;
+    info.element[num].pdusession_id = (uint8_t)entityPtr->pdusession_id;
+    num++;
+  }
+  info.num_elements = (uint16_t)num;
+
+  return info;
+}
+
+void *sdap_pdusession_manager(void*) {
+  int server_fd;
+  struct sockaddr_in address;
+  int addrlen = sizeof(address);
+  char buffer[1024] = {0};
+  const int port = 34000;
+
+  // Create a socket
+  if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+    LOG_E(SDAP, "PDU session manager socket failed");
+    exit(EXIT_FAILURE);
+  }
+
+  // Set socket options
+  int opt = 1;
+  if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
+    perror("PDU session manager setsockopt failed");
+    exit(EXIT_FAILURE);
+  }
+
+  // Bind socket to port
+  address.sin_family = AF_INET;
+  address.sin_addr.s_addr = INADDR_ANY;
+  address.sin_port = htons(port);
+  if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
+    perror("PDU session manager bind failed");
+    exit(EXIT_FAILURE);
+  }
+
+  // Listen for incoming connections
+  if (listen(server_fd, 1) < 0) {
+    perror("PDU session manager listen failed");
+    exit(EXIT_FAILURE);
+  }
+  LOG_I(SDAP, "PDU session manager listening on port %d\n", port);
+
+  // Accept incoming connection
+  while (!oai_exit) {
+    int new_socket;
+    if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
+      perror("PDU session manager accept failed");
+      exit(EXIT_FAILURE);
+    }
+    LOG_I(SDAP, "PDU session manager connection accepted\n");
+
+    // Wait for data from client
+    while (!oai_exit) {
+      int valread = recv(new_socket, buffer, 1024, 0);
+      if (valread <= 0) {
+        LOG_W(SDAP, "PDU session manager failed to receive data from client\n");
+        break;
+      }
+      printf("%s\n", buffer);
+
+      // get SDAP entity info
+      struct sdap_entity_info info = get_sdap_entity_info();
+      printf("packed data %ld to be sent %lx %lx\n", sizeof(info), *((uint64_t*)&info), *((uint64_t*)&info+1));
+      // Send message to client
+      int ret = send(new_socket, (void*)&info, sizeof(info), 0);
+      if (ret < 0) {
+        LOG_W(SDAP, "PDU session manager failed to send data to client\n");
+        break;
+      } else {
+        LOG_I(SDAP, "Sent %d bytes\n", ret);
+      }
+
+      // Clear buffer
+      memset(buffer, 0, sizeof(buffer));
+    }
+    // Release connection
+    close(new_socket);
+  }
+  return NULL;
+}
+
+void start_sdap_pdusession_manager(void) {
+  pthread_t t;
+
+  if (pthread_create(&t, NULL, sdap_pdusession_manager, NULL) != 0) {
+    LOG_E(SDAP, "Error creating thread in %s\n", __FUNCTION__);
+  }
+}
