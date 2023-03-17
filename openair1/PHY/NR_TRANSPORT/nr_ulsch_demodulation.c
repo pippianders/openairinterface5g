@@ -1095,8 +1095,10 @@ void nr_ulsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
 
   if (n_rx > 1) {
     #if defined(__x86_64__) || defined(__i386__)
+
+    int nb_re = nb_rb * 12;
+
     for (int aatx=0; aatx<nrOfLayers; aatx++) {
-      int nb_re = nb_rb*12;
 
       rxdataF_comp128[0]   = (__m128i *)&rxdataF_comp[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
       ul_ch_mag128[0]      = (__m128i *)&ul_ch_mag[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
@@ -1115,6 +1117,22 @@ void nr_ulsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
             //rxdataF_comp128[0][i] = _mm_add_epi16(rxdataF_comp128_0[i],(*(__m128i *)&jitterc[0]));
         }
       }
+
+      if (rho) {
+        int b = log2_approx(n_rx >> 1);
+        __m128i *rho128[2];
+        for (int aatx2 = 0; aatx2 < nrOfLayers; aatx2++) {
+          rho128[0] = (__m128i *) &rho[0][aatx * frame_parms->nb_antennas_rx + aatx2][(symbol * (nb_re + off))];
+          for (int aa = 1; aa < n_rx; aa++) {
+            rho128[1] = (__m128i *) &rho[aa][aatx * frame_parms->nb_antennas_rx + aatx2][(symbol * (nb_re + off))];
+            for (i = 0; i < nb_rb_0 * 3; i++) {
+              rho128[0][i] = _mm_adds_epi16(rho128[0][i], rho128[1][i]);
+              rho128[0][i] = _mm_srai_epi16(rho128[0][i], b);
+            }
+          }
+        }
+      }
+
     }
     #elif defined(__arm__) || defined(__aarch64__)
     rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12];
