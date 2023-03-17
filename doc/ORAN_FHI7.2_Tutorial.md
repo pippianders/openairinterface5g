@@ -7,7 +7,7 @@
       </a>
     </td>
     <td style="border-collapse: collapse; border: none; vertical-align: center;">
-      <b><font size = "5">OAI 7:2 Frontahul Interface 5G SA tutorial</font></b>
+      <b><font size = "5">OAI 7.2 Fronthaul Interface 5G SA Tutorial</font></b>
     </td>
   </tr>
 </table>
@@ -16,7 +16,19 @@
 
 [[_TOC_]]
 
-#  1. Prerequisites
+# 1. Prerequisites
+
+The hardware on which we have tried this tutorial:
+
+|Hardware (CPU,RAM)                          |Operating System                               |NIC (Vendor,Driver,Firmware)                     |
+|--------------------------------------------|-----------------------------------------------|-------------------------------------------------|
+|Intel(R) Xeon(R) Gold 6154 (2*18 Core), 64GB|RHEL 8.6 (4.18.0-372.26.1.rt7.183)|QLogic FastLinQ QL41000,qede,mbi 15.35.1         |
+|Intel(R) Xeon(R) Gold 6354 18-Core, 128GB   |RHEL 8.7 (4.18.0-425.10.1.rt7.220)|Intel XXV710 for 25GbE SFP28,i40e,6.02 0x80003888|
+|AMD EPYC 7513 32-Core Processor             |Ubuntu 20.04 (5.4.143-rt64)                    |Intel X710 for 10GbE SFP+,i40e,5.04 0x80002530|
+
+We always set our servers to maximum performance mode. 
+
+For PTP grandmaster we have used Fibrolan Falcon-RX. The radio unit which we have used for this tutorial is VVDN LPRU.
 
 ## 1.1 DPDK(Data Plane Development Kit)
 
@@ -38,31 +50,34 @@ sudo ninja install
 make install T=x86_64-native-linuxapp-gcc
 ```
 
-## 1.2 Setup 
+## 1.2 Setup
 
-Refer following link for setup configuration
+We have mentioned the information for our setup but if you want more information then you can refer to below links,
 
-https://docs.o-ran-sc.org/projects/o-ran-sc-o-du-phy/en/latest/Setup-Configuration_fh.html
+1. [O-RAN-SC O-DU Setup Configuration](https://docs.o-ran-sc.org/projects/o-ran-sc-o-du-phy/en/latest/Setup-Configuration_fh.html)
+2. [O-RAN Cloud Platform Reference Designs 2.0,O-RAN.WG6.CLOUD-REF-v02.00,February 2021](https://orandownloadsweb.azurewebsites.net/specifications)
 
 ### 1.2.1 RHEL
 
+These arguments we tried on both RHEL 8.6 (4.18.0-372.26.1.rt7.183.el8_6.x86_64) and 8.7 (4.18.0-425.10.1.rt7.220.el8_7.x86_64) 
+
 Update Linux boot arguments
 ```bash
-BOOT_IMAGE=(hd0,gpt2)/vmlinuz-4.18.0-425.10.1.rt7.220.el8_7.x86_64 root=/dev/mapper/rhel_skylark-root ro crashkernel=auto resume=/dev/mapper/rhel_skylark-swap rd.lvm.lv=rhel_skylark/root rd.lvm.lv=rhel_skylark/swap rhgb quiet igb.max_vfs=2 intel_iommu=on iommu=pt intel_pstate=disable nosoftlockup tsc=nowatchdog mitigations=off cgroup_memory=1 cgroup_enable=memory mce=off idle=poll hugepagesz=1G hugepages=40 hugepagesz=2M hugepages=0 default_hugepagesz=1G selinux=0 enforcing=0 nmi_watchdog=0 softlockup_panic=0 audit=0 skew_tick=1 skew_tick=1 isolcpus=managed_irq,domain,0-2,8-17 intel_pstate=disable nosoftlockup tsc=reliable
+igb.max_vfs=2 intel_iommu=on iommu=pt intel_pstate=disable nosoftlockup tsc=nowatchdog mitigations=off cgroup_memory=1 cgroup_enable=memory mce=off idle=poll hugepagesz=1G hugepages=40 hugepagesz=2M hugepages=0 default_hugepagesz=1G selinux=0 enforcing=0 nmi_watchdog=0 softlockup_panic=0 audit=0 skew_tick=1 isolcpus=managed_irq,domain,0-2,8-17 nohz_full=0-2,8-17 rcu_nocbs=0-2,8-17 rcu_nocb_poll
 ```
+
 ### 1.2.1 Ubuntu
 
 Install real timer kernel followed by updating boot arguments
 ```bash
 isolcpus=0-2,8-17 nohz=on nohz_full=0-2,8-17 rcu_nocbs=0-2,8-17 rcu_nocb_poll nosoftlockup default_hugepagesz=1GB hugepagesz=1G hugepages=10 amd_iommu=on iommu=pt
 ```
-Use isolated CPU 0-2 for DPDK/ORAN, CPU 8 for ru_thread in our example config
+
+Isolated CPU 0-2 are used for DPDK/ORAN and CPU 8 for `ru_thread` in our example config
 
 ## 1.3 PTP configuration
 
-Refer following link for PTP configuration
-
-https://docs.o-ran-sc.org/projects/o-ran-sc-o-du-phy/en/latest/PTP-configuration_fh.html
+You can refer to the [following o-ran link](https://docs.o-ran-sc.org/projects/o-ran-sc-o-du-phy/en/latest/PTP-configuration_fh.html) for PTP configuration. In our setup we used Fibrolan Falcon-RX for PTP grandmaster. 
 
 # 2. Build OAI-FHI gNB
 
@@ -75,7 +90,7 @@ cd phy
 git checkout oran_release_bronze_v1.1
 ```
 
-Apply patches (available in oai_folder/cmake_targets/tools/oran_fhi_integration_patches/)
+Apply patches (available in `oai_folder/cmake_targets/tools/oran_fhi_integration_patches/`)
 ```bash
 git apply oran-fhi-1-compile-libxran-using-gcc-and-disable-avx512.patch
 git apply oran-fhi-2-return-correct-slot_id.patch
@@ -108,24 +123,25 @@ cd openairinterface5g
 git checkout develop
 source oaienv
 cd cmake_targets
-./build_oai --gNB --ninja -t oran_fhlib_5g (Add, -I if it is build first time on server for installing external dependencies)
+./build_oai --gNB --ninja -t oran_fhlib_5g (Add, -I if you are building for the first time on server for installing external dependencies)
 ```
 
 # 3. Configure Server and OAI gNB
 
 ## 3.1 Update following in fronthaul interface configuration - oran.fhi.json
 
-```bash
- * DU, RU MAC Address
- * PCI address
+```
+ * DU Mac-address: Parameter o_du_macaddr 
+ * RU MAC Address: Parameter o_ru_macaddr
+ * PCI address: Parameter dpdk_dev_up and dpdk_dev_cp
 ```
 
 ## 3.2 Copy Fronthaul Configuration File
 
-   ```
-   cd ran_build/build
-   cp ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/oran.conf.json .
-   ```
+```bash
+cd ran_build/build
+cp ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/oran.fhi.json .
+```
 
 ## 3.2 Bind Devices
 
